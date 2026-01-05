@@ -17,6 +17,30 @@ resource "aws_cloudfront_distribution" "s3_distribution" {
     origin_access_control_id = aws_cloudfront_origin_access_control.default.id
   }
 
+  # 1. Dodaj ID WAFa
+  web_acl_id = var.waf_id
+
+  # 2. Dodaj Logowanie
+  logging_config {
+    include_cookies = false
+    bucket          = var.logs_bucket_domain_name
+    prefix          = "cf-logs/"
+  }
+
+  # 3. Dodaj Error Pages
+  custom_error_response {
+    error_code            = 403
+    response_code         = 404
+    response_page_path    = "/404.html"
+    error_caching_min_ttl = 10
+  }
+  custom_error_response {
+    error_code            = 404
+    response_code         = 404
+    response_page_path    = "/404.html"
+    error_caching_min_ttl = 10
+  }
+  
   default_cache_behavior {
     allowed_methods  = ["GET", "HEAD"]
     cached_methods   = ["GET", "HEAD"]

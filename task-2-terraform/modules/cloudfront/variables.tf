@@ -8,3 +8,6 @@ variable "project_name" {
   type        = string
   default     = "static-website"
 }
+
+variable "waf_id" { type = string }
+variable "logs_bucket_domain_name" { type = string }
