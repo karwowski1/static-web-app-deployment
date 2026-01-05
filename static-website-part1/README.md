@@ -1,0 +1,3 @@
+a. Configure ownership of your own domain in AWS To configure ownership, I would create a Hosted Zone in AWS Route 53 for my domain. Then, I would update the Nameservers settings at my domain registrar (where I bought the domain) to match the four addresses provided by the AWS Hosted Zone.
+
+b. Redirect your domain name to the Cloudfront address In Route 53, I would create an 'A' record and enable the Alias feature. Then, I would select "Alias to CloudFront distribution" and choose my specific distribution as the target, which routes traffic directly to the CDN.
