@@ -6,16 +6,16 @@ terraform {
     }
   }
 
-  # KONFIGURACJA REMOTE STATE (Podmień wartości!)
+ 
   backend "s3" {
-    bucket         = "tfstate-part2-lock"                       # np. terraform-state-jan-kowalski
-    key            = "task-2/terraform.tfstate"                 # Ścieżka do pliku wewnątrz bucketa
-    region         = "eu-west-2"                                # Twój region (np. eu-central-1 lub eu-west-2)
-    dynamodb_table = "ts-locks"                                 # Nazwa Twojej tabeli DynamoDB
+    bucket         = "tfstate-part2-lock"                       
+    key            = "task-2/terraform.tfstate"                 
+    region         = "eu-west-2"                                
+    dynamodb_table = "ts-locks"                                 
     encrypt        = true
   }
 }
 
 provider "aws" {
-  region = "eu-west-2" # Upewnij się, że to ten sam region co wyżej
+  region = "eu-west-2" 
 }

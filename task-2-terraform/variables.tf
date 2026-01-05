@@ -1,6 +1,6 @@
 variable "root_bucket_name" {
   type        = string
-  description = "Nazwa bucketa dla strony (musi byc unikalna!)"
+  description = "Nazwa bucketa dla strony"
 }
 
 variable "root_project_name" {

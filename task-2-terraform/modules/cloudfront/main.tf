@@ -9,7 +9,7 @@ resource "aws_cloudfront_origin_access_control" "default" {
 resource "aws_cloudfront_distribution" "s3_distribution" {
   enabled             = true
   is_ipv6_enabled     = true
-  default_root_object = "index.html" # To naprawia błąd AccessDenied na starcie
+  default_root_object = "index.html" 
 
   origin {
     domain_name              = var.bucket_regional_domain_name
@@ -22,9 +22,9 @@ resource "aws_cloudfront_distribution" "s3_distribution" {
     cached_methods   = ["GET", "HEAD"]
     target_origin_id = "S3Origin"
 
-    viewer_protocol_policy = "redirect-to-https" # Wymaganie zadania (HTTPS)
+    viewer_protocol_policy = "redirect-to-https" 
 
-    # Prosta konfiguracja cache (legacy, ale wystarczy do zadania)
+    
     forwarded_values {
       query_string = false
       cookies {
