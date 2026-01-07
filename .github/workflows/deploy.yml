@@ -2,8 +2,7 @@ name : "Static Web App Deployment - Part 3"
 
 on:
   push:
-    branches:
-      - Part-3  
+    branches:  
       - main
     paths:
         - 'static-web-part3/**'
