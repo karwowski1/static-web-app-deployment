@@ -36,6 +36,22 @@ resource "aws_subnet" "public" {
   }
 }
 
+# Send any traffic that is not local (0.0.0.0/0 = the entire world) to the Internet Gateway.
+resource "aws_route_table" "public" {
+  vpc_id = aws_vpc.main.id
+
+  route {
+    cidr_block = "0.0.0.0/0"
+    gateway_id = aws_internet_gateway.igw.id
+  }
+}
+#Adding table to the subnet
+resource "aws_route_table_association" "public" {
+  subnet_id      = aws_subnet.public.id
+  route_table_id = aws_route_table.public.id
+}
+
+
 ###################
 # SECURITY GROUP
 ###################
@@ -44,6 +60,13 @@ resource "aws_security_group" "ec2" {
   description = "SG for EC2 (SSM-friendly; no inbound required)"
   vpc_id      = aws_vpc.main.id
 
+  # Ingress: allow HTTP from anywhere. Connects
+  ingress {
+    from_port = 80
+    to_port =   80
+    protocol = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
   # Egress: allow outbound to the Internet (SSM agent needs this).
   egress {
     from_port   = 0
