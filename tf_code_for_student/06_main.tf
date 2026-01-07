@@ -89,9 +89,17 @@ resource "aws_instance" "nginx_app" {
   ami                         = "ami-0a854fe96e0b45e4e"
   instance_type               = var.instance_type
   subnet_id                   = aws_subnet.public.id
-  associate_public_ip_address = false
+  associate_public_ip_address = true
   vpc_security_group_ids      = [aws_security_group.ec2.id]
 
+  user_data = <<-EOF
+              #!/bin/bash
+              sudo yum update -y
+              sudo yum install -y nginx
+              sudo systemctl start nginx
+              sudo systemctl enable nginx
+              EOF
+  
   tags = {
     Name    = "${var.project_name}-ec2"
     Project = var.project_name
