@@ -1,11 +1,13 @@
 resource "aws_sns_topic" "alerts" {
   name = "cloudfront-security-alerts"
+  provider = aws.us-east-1
 }
 
 resource "aws_sns_topic_subscription" "email_target" {
-    topic_arn = "aws_sns_topic_.alerts.arn"
+    topic_arn = aws_sns_topic.alerts.arn
     protocol = "email"
     endpoint = "aws-acc@wp.pl"
+    provider = aws.us-east-1
 }
 
 resource "aws_cloudwatch_metric_alarm" "waf_block_alarm" {

@@ -6,10 +6,11 @@ data "tls_certificate" "github" {
 }
 
 #Creating OIDC provider in AWS
+#Tells AWS to trust tokens from GitHub
 resource "aws_iam_openid_connect_provider" "github" {
-    url = "token.actions.githubusercontent.com"
+    url = "https://token.actions.githubusercontent.com"
     client_id_list = ["sts.amazonaws.com"]
-    thumbprint_list = [data.tls_certificate.github.sha1_fingerprint]
+    thumbprint_list = [data.tls_certificate.github.certificates[0].sha1_fingerprint]
 }
 
 #Defining repo 
@@ -105,5 +106,5 @@ output "role_plan_arn" {
 
 output "role_apply_arn" {
   description = "ARN of the IAM role for TF apply"
-  value = "aws_iam_role.terraform_apply.arn"
+  value = aws_iam_role.terraform_apply.arn
 }

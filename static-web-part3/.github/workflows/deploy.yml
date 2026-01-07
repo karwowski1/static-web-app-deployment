@@ -1,0 +1,78 @@
+name : "Static Web App Deployment - Part 3"
+
+on:
+  push:
+    branches:
+      - Part-3  
+      - main
+    paths:
+        - 'static-web-part3/**'
+  workflow_dispatch:
+
+permissions:
+    id-token: write
+    contents: read
+
+jobs:
+    terraform-plan:
+        name: "Terraform Plan"
+        runs-on: ubuntu-latest
+        defaults:
+            run:
+                working-directory: ./static-web-part3
+
+        steps:
+            - name: Checkout Code
+              uses: actions/checkout@v4
+              
+            - name: Setup Terraform
+              uses: hashicorp/setup-terraform@v3  
+            
+            - name: Configure AWS Credentials for Plan
+              uses: aws-actions/configure-aws-credentials@v4
+              with:
+                  role-to-assume: ${{ secrets.AWS_ROLE_PLAN_ARN}}
+                  aws-region: ${{ secrets.AWS_REGION }}
+                  
+            - name: Terraform Init
+              run: terraform init
+              
+            - name: Terraform Validate
+              run: terraform validate
+              
+            - name: Terraform Plan
+              run: terraform plan -out=tfplan
+
+            - name: Upload Plan Artifact
+              uses: actions/upload-artifact@v4
+              with:
+                  name: tfplan
+                  path: ./static-web-part3/tfplan
+
+    terraform-apply:
+        name: "Terraform Apply"
+        needs: terraform-plan
+        if: github.event_name == 'workflow dispatch'
+        runs-on: ubuntu-latest
+        defaults:
+            run:
+                working-directory: ./static-web-part3
+
+        steps:
+            - name: Checkout Code
+              uses: actions/checkout@v4
+
+            - name: Setup Terraform
+              uses: hashicorp/setup-terraform@v3
+
+            - name: Configure AWS Credentials for Apply
+              uses: aws-actions/configure-aws-credentials@v4
+              with:
+                  role-to-assume: ${{ secrets.AWS_ROLE_APPLY_ARN}}
+                  aws-region: ${{ secrets.AWS_REGION }}
+
+            - name: Terraform Init
+              run: terraform init
+
+            - name: Terraform Apply 
+              run: terraform apply -auto-approve tfplan
