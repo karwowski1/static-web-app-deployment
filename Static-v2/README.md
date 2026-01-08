@@ -8,6 +8,7 @@ This project provisions a secure static website, which returns the string Hello 
 - **Security:** S3 Bucket Policy + OAC (Origin Access Control) restricts access only to CloudFront.
 
 ## Project Structure
+```text
 Static-v2/
 ├── envs/
 │   └── dev/             # Environment specific configuration (main.tf)
