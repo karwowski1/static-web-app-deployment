@@ -2,8 +2,8 @@ name : "Static Web App Deployment - Part 3"
 
 on:
   push:
-    branches: 
-      - main
+    branches:  
+      - Part-3
     paths:
         - 'static-web-part3/**'
   workflow_dispatch:
