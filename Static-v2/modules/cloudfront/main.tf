@@ -2,6 +2,7 @@ resource "aws_cloudfront_distribution" "s3_distribution" {
   origin {
     domain_name              = var.bucket_domain_name
     origin_id                = var.origin_id
+    origin_access_control_id = aws_cloudfront_origin_access_control.s3_oac.id
   }
 
   enabled    = true
@@ -40,3 +41,10 @@ resource "aws_cloudfront_distribution" "s3_distribution" {
   tags = var.tags
 }
 
+resource "aws_cloudfront_origin_access_control" "s3_oac" {
+  name                              = "s3-oac-static-app"
+  description                       = "OAC for S3 static website"
+  origin_access_control_origin_type = "s3"
+  signing_behavior                  = "always"
+  signing_protocol                  = "sigv4"
+}
