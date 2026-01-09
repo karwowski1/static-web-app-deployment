@@ -7,6 +7,12 @@ resource "aws_cloudfront_distribution" "s3_distribution" {
 
   enabled    = true
 
+  logging_config {
+    include_cookies = false
+    bucket          = var.logging_bucket_domain
+    prefix          = "logs/"
+  }
+
   web_acl_id = var.waf_acl_id
 
   default_cache_behavior {

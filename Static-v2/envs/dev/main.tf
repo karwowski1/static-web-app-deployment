@@ -28,10 +28,12 @@ module "cloudfront" {
   origin_id            = module.s3_website.bucket_id
   bucket_domain_name   = module.s3_website.bucket_domain_name
   waf_acl_id           = module.waf.waf_acl_arn
+  logging_bucket_domain = module.s3_website.logs_bucket_domain_name
   tags = {
     Name        = "Static-app-CF"
     Environment = "Dev"
   }
+  
 }
 
 resource "aws_s3_bucket_policy" "bucket_policy" {
@@ -62,3 +64,5 @@ module "waf" {
   }
   
 }
+
+
