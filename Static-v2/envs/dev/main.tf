@@ -19,6 +19,7 @@ module "cloudfront" {
   source               = "../../modules/cloudfront"
   origin_id            = module.s3_website.bucket_id
   bucket_domain_name   = module.s3_website.bucket_domain_name
+  waf_acl_id           = module.waf.waf_acl_arn
   tags = {
     Name        = "Static-app-CF"
     Environment = "Dev"
@@ -40,4 +41,16 @@ resource "aws_s3_bucket_policy" "bucket_policy" {
       }
     ]
   })
+}
+
+module "waf" {
+  source = "../../modules/waf"
+  providers = {
+    aws = aws.us_east_1
+  }
+  waf_tags = {
+    Name        = "Static-app-WAF-Dev"
+    Environment = "Dev"
+  }
+  
 }

@@ -17,3 +17,10 @@ variable "tags" {
     Environment = "Dev"
   }
 }
+
+variable "waf_acl_id" {
+  description = "The ARN of the WAF ACL to associate with the CloudFront distribution"
+  type        = string
+  default     = ""
+  
+}

@@ -7,6 +7,8 @@ resource "aws_cloudfront_distribution" "s3_distribution" {
 
   enabled    = true
 
+  web_acl_id = var.waf_acl_id
+
   default_cache_behavior {
     allowed_methods  = ["GET", "HEAD"]
     cached_methods   = ["GET", "HEAD"]
