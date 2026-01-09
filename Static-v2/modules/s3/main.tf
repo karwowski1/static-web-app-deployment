@@ -19,16 +19,47 @@ resource "aws_s3_bucket_website_configuration" "example" {
     suffix = "index.html"
   }
 }
-#   error_document {
-#     key = "error.html"
-#   }
 
-#   routing_rule {
-#     condition {
-#       key_prefix_equals = "docs/"
-#     }
-#     redirect {
-#       replace_key_prefix_with = "documents/"
-#     }
-#   }
-# }
+resource "aws_s3_bucket" "logs_bucket" {
+  bucket = "${var.s3_name}-logs"
+  tags   = var.tags
+}
+
+resource "aws_s3_bucket_ownership_controls" "logs_bucket_ownership" {
+  bucket = aws_s3_bucket.logs_bucket.id
+
+  rule {
+    object_ownership = "BucketOwnerPreferred"
+  }
+}
+
+resource "aws_s3_bucket_public_access_block" "logs_bucket_public_access_block" {
+  bucket = aws_s3_bucket.logs_bucket.id
+
+  block_public_acls       = true
+  block_public_policy     = true
+  restrict_public_buckets = true
+}
+
+resource "aws_s3_bucket_acl" "logs_bucket_acl" {
+  depends_on = [
+    aws_s3_bucket_ownership_controls.logs_bucket_ownership,
+    aws_s3_bucket_public_access_block.logs_bucket_public_access_block,
+  ]
+
+  bucket = aws_s3_bucket.logs_bucket.id
+  acl    = "log-delivery-write"
+}
+
+resource "aws_s3_bucket_lifecycle_configuration" "logs_bucket_lifecycle" {
+  bucket = aws_s3_bucket.logs_bucket.id
+
+  rule {
+    id     = "log-expiration"
+    status = "Enabled"
+
+    expiration {
+      days = 30
+    }
+  }
+}

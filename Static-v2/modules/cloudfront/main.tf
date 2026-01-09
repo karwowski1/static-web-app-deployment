@@ -7,6 +7,14 @@ resource "aws_cloudfront_distribution" "s3_distribution" {
 
   enabled    = true
 
+  logging_config {
+    include_cookies = false
+    bucket          = var.logging_bucket_domain
+    prefix          = "logs/"
+  }
+
+  web_acl_id = var.waf_acl_id
+
   default_cache_behavior {
     allowed_methods  = ["GET", "HEAD"]
     cached_methods   = ["GET", "HEAD"]
@@ -36,6 +44,27 @@ resource "aws_cloudfront_distribution" "s3_distribution" {
 
   viewer_certificate {
     cloudfront_default_certificate = true
+  }
+
+  custom_error_response {
+    error_code            = 404
+    response_code         = 200
+    response_page_path    = "/error.html"
+    error_caching_min_ttl = 10
+  }
+
+  custom_error_response {
+    error_code            = 403
+    response_code         = 200
+    response_page_path    = "/error.html"
+    error_caching_min_ttl = 10
+  }
+
+  custom_error_response {
+    error_code            = 500
+    response_code         = 200
+    response_page_path    = "/error.html"
+    error_caching_min_ttl = 10
   }
 
   tags = var.tags
