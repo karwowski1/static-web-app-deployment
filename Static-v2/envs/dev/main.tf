@@ -15,6 +15,14 @@ resource "aws_s3_object" "index_html" {
   
 }
 
+resource "aws_s3_object" "error_html" {
+  bucket = module.s3_website.bucket_id
+  key    = "error.html"
+  source = "../../src/error.html"
+  content_type = "text/html"
+  
+}
+
 module "cloudfront" {
   source               = "../../modules/cloudfront"
   origin_id            = module.s3_website.bucket_id
