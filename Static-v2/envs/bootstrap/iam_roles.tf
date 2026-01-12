@@ -1,4 +1,4 @@
-#ROLE1q: PLAN (Read-Only Access + State Access)
+#ROLE1: PLAN (Read-Only Access + State Access)
 
 resource "aws_iam_role" "plan_role" {
   name               = "GitHubActions-PlanRole"
@@ -9,6 +9,7 @@ resource "aws_iam_role_policy_attachment" "plan_readonly" {
   role       = aws_iam_role.plan_role.name
   policy_arn = "arn:aws:iam::aws:policy/ReadOnlyAccess"
 }
+
 
 resource "aws_iam_role_policy" "state_access" {
   name = "TerraformStateAccess"
@@ -47,7 +48,7 @@ locals {
   apply_policies = [
     "arn:aws:iam::aws:policy/AmazonS3FullAccess",
     "arn:aws:iam::aws:policy/CloudFrontFullAccess",
-    "arn:aws:iam::aws:policy/AWSWAFConsoleFullAccess", # lub AWSWAFv2FullAccess
+    "arn:aws:iam::aws:policy/AWSWAFConsoleFullAccess", 
     "arn:aws:iam::aws:policy/CloudWatchFullAccess"
   ]
 }
