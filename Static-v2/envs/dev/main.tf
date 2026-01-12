@@ -7,22 +7,6 @@ module "s3_website" {
   }
 }
 
-resource "aws_s3_object" "index_html" {
-  bucket = module.s3_website.bucket_id
-  key    = "index.html"
-  source = "../../src/index.html"
-  content_type = "text/html"
-  
-}
-
-resource "aws_s3_object" "error_html" {
-  bucket = module.s3_website.bucket_id
-  key    = "error.html"
-  source = "../../src/error.html"
-  content_type = "text/html"
-  
-}
-
 module "cloudfront" {
   source               = "../../modules/cloudfront"
   origin_id            = module.s3_website.bucket_id
@@ -36,22 +20,6 @@ module "cloudfront" {
   
 }
 
-resource "aws_s3_bucket_policy" "bucket_policy" {
-  bucket = module.s3_website.bucket_id
-
-  policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [
-      {
-        Sid = "AllowCloudFrontAccess"
-        Effect = "Allow"
-        Principal = { Service = "cloudfront.amazonaws.com" }
-        Action = "s3:GetObject"
-        Resource = "${module.s3_website.bucket_arn}/*"
-      }
-    ]
-  })
-}
 
 module "waf" {
   source = "../../modules/waf"
@@ -63,6 +31,14 @@ module "waf" {
     Environment = "Dev"
   }
   
+}
+
+module "cloudwatch" {
+  source = "../../modules/cloudwatch"
+  
+  env = "dev"
+  cloudfront_distribution_id = module.cloudfront.cloudfront_distribution_id
+  waf_name = module.waf.aws_waf_name
 }
 
 
