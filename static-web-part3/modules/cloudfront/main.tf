@@ -9,7 +9,7 @@ resource "aws_cloudfront_origin_access_control" "default" {
 resource "aws_cloudfront_distribution" "s3_distribution" {
   enabled             = true
   is_ipv6_enabled     = true
-  default_root_object = "index.html" 
+  default_root_object = "index.html"
 
   origin {
     domain_name              = var.bucket_regional_domain_name
@@ -26,7 +26,7 @@ resource "aws_cloudfront_distribution" "s3_distribution" {
     prefix          = "cf-logs/"
   }
 
-  
+
   custom_error_response {
     error_code            = 403
     response_code         = 404
@@ -39,24 +39,24 @@ resource "aws_cloudfront_distribution" "s3_distribution" {
     response_page_path    = "/404.html"
     error_caching_min_ttl = 10
   }
-  
+
   default_cache_behavior {
     allowed_methods  = ["GET", "HEAD"]
     cached_methods   = ["GET", "HEAD"]
     target_origin_id = "S3Origin"
 
-    viewer_protocol_policy = "redirect-to-https" 
+    viewer_protocol_policy = "redirect-to-https"
 
-    
+
     forwarded_values {
       query_string = false
       cookies {
         forward = "none"
       }
     }
-    min_ttl                = 0
-    default_ttl            = 3600
-    max_ttl                = 86400
+    min_ttl     = 0
+    default_ttl = 3600
+    max_ttl     = 86400
   }
 
   restrictions {

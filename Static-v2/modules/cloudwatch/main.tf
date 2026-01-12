@@ -27,7 +27,7 @@ resource "aws_cloudwatch_dashboard" "main" {
         }
       },
       {
-        type   = "metric" 
+        type   = "metric"
         x      = 12
         y      = 0
         width  = 12
@@ -44,7 +44,7 @@ resource "aws_cloudwatch_dashboard" "main" {
               "ALL",
               "Region",
               "us-east-1",
-              { "color": "#d62728" }
+              { "color" : "#d62728" }
             ]
           ]
 

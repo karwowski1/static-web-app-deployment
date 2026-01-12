@@ -4,6 +4,6 @@ variable "root_bucket_name" {
 }
 
 variable "root_project_name" {
-  type        = string
-  default     = "static-website-terraform"
+  type    = string
+  default = "static-website-terraform"
 }

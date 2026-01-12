@@ -26,10 +26,10 @@ resource "aws_iam_role_policy" "state_access" {
           "dynamodb:PutItem",
           "dynamodb:DeleteItem"
         ]
-        Effect   = "Allow"
+        Effect = "Allow"
         Resource = [
-             "arn:aws:s3:::${var.state_bucket_name}",
-             "arn:aws:s3:::${var.state_bucket_name}/*"
+          "arn:aws:s3:::${var.state_bucket_name}",
+          "arn:aws:s3:::${var.state_bucket_name}/*"
         ]
       },
     ]
@@ -61,5 +61,5 @@ resource "aws_iam_role_policy_attachment" "apply_attach" {
 resource "aws_iam_role_policy" "apply_state_access" {
   name   = "TerraformStateAccess"
   role   = aws_iam_role.apply_role.id
-  policy = aws_iam_role_policy.state_access.policy 
+  policy = aws_iam_role_policy.state_access.policy
 }

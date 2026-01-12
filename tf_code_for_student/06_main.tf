@@ -62,9 +62,9 @@ resource "aws_security_group" "ec2" {
 
   # Ingress: allow HTTP from anywhere. Connects
   ingress {
-    from_port = 80
-    to_port =   80
-    protocol = "tcp"
+    from_port   = 80
+    to_port     = 80
+    protocol    = "tcp"
     cidr_blocks = ["0.0.0.0/0"]
   }
   # Egress: allow outbound to the Internet (SSM agent needs this).
@@ -99,7 +99,7 @@ resource "aws_instance" "nginx_app" {
               sudo systemctl start nginx
               sudo systemctl enable nginx
               EOF
-  
+
   tags = {
     Name    = "${var.project_name}-ec2"
     Project = var.project_name

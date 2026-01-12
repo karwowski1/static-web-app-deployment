@@ -19,9 +19,9 @@ resource "aws_wafv2_web_acl" "main" {
       rate_based_statement {
         limit              = 100
         aggregate_key_type = "IP"
-        }
       }
-    
+    }
+
 
     visibility_config {
       cloudwatch_metrics_enabled = true
@@ -31,7 +31,7 @@ resource "aws_wafv2_web_acl" "main" {
   }
 
   tags = var.waf_tags
-  
+
   visibility_config {
     cloudwatch_metrics_enabled = true
     metric_name                = "RateLimit100"

@@ -2,7 +2,7 @@ resource "aws_wafv2_web_acl" "main" {
   name        = "rate-limit-protection"
   description = "Limit 100 requests/min"
   scope       = "CLOUDFRONT"
-  provider    = aws.us-east-1 
+  provider    = aws.us-east-1
 
   default_action {
     allow {}

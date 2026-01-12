@@ -76,7 +76,7 @@ resource "aws_s3_bucket_policy" "bucket_policy" {
         Principal = { Service = "cloudfront.amazonaws.com" }
         Action    = "s3:GetObject"
         # Poniżej kluczowa poprawka: odwołujemy się do zasobu lokalnie, a nie przez module.
-        Resource  = "${aws_s3_bucket.website_bucket.arn}/*" 
+        Resource = "${aws_s3_bucket.website_bucket.arn}/*"
       }
     ]
   })

@@ -5,7 +5,7 @@ resource "aws_cloudfront_distribution" "s3_distribution" {
     origin_access_control_id = aws_cloudfront_origin_access_control.s3_oac.id
   }
 
-  enabled    = true
+  enabled = true
 
   logging_config {
     include_cookies = false
@@ -16,7 +16,7 @@ resource "aws_cloudfront_distribution" "s3_distribution" {
   web_acl_id = var.waf_acl_id
 
   default_root_object = "index.html"
-  
+
   default_cache_behavior {
     allowed_methods  = ["GET", "HEAD"]
     cached_methods   = ["GET", "HEAD"]
@@ -36,7 +36,7 @@ resource "aws_cloudfront_distribution" "s3_distribution" {
     max_ttl                = 86400
   }
 
-    price_class = "PriceClass_100"
+  price_class = "PriceClass_100"
 
   restrictions {
     geo_restriction {
