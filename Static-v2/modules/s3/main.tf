@@ -1,6 +1,7 @@
 resource "aws_s3_bucket" "website_bucket" {
   bucket = var.s3_name
   tags   = var.tags
+  force_destroy = true
 }
 
 resource "aws_s3_bucket_public_access_block" "block_public" {
@@ -24,6 +25,7 @@ resource "aws_s3_bucket_website_configuration" "example" {
 resource "aws_s3_bucket" "logs_bucket" {
   bucket = "${var.s3_name}-logs"
   tags   = var.tags
+  force_destroy = true
 }
 
 resource "aws_s3_bucket_ownership_controls" "logs_bucket_ownership" {
