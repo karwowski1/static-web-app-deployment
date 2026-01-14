@@ -55,13 +55,20 @@ jobs:
         tflint
 
     - name: Terraform Plan
-      run: terraform plan
+      run: terraform plan -out=tfplan
+
+    - name: Upload Terraform Plan
+      uses: actions/upload-artifact@v3
+      with:
+        name: tfplan
+        path: ./Static-v2/envs/dev/tfplan
+
 
   terraform-apply:
     name: 'Terraform Apply'
     needs: terraform-plan
-    if: github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
+    environment: production
     defaults:
       run:
         working-directory: ./Static-v2/envs/dev
@@ -84,5 +91,11 @@ jobs:
     - name: Terraform Init
       run: terraform init
 
+    - name: Download Terraform Plan
+      uses: actions/download-artifact@v3
+      with:
+        name: tfplan
+        path: ./Static-v2/envs/dev
+
     - name: Terraform Apply
-      run: terraform apply -auto-approve
+      run: terraform apply -auto-approve tfplan
