@@ -5,6 +5,7 @@ on:
     branches: [ main ]
     paths:
       - 'Static-v2/**'
+      - '.github/workflows/**'
   
   workflow_dispatch:
 
