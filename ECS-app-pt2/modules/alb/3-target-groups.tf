@@ -1,4 +1,4 @@
-resource "aws_lb_target_group" "alb-example" {
+resource "aws_lb_target_group" "alb_example" {
   name        = "${var.project_name}-tg"
   target_type = "ip"
   port        = 8080
