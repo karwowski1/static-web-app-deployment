@@ -1,0 +1,102 @@
+name: Deploy Static App V2 (Manual Apply)
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'Static-v2/**'
+      - '.github/workflows/**'
+  
+  workflow_dispatch:
+
+permissions:
+  id-token: write  
+  contents: read
+
+jobs:
+  terraform-plan:
+    name: 'Terraform Plan'
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./Static-v2/envs/dev
+
+    steps:
+    - name: Checkout Code
+      uses: actions/checkout@v3
+
+    - name: Configure AWS Credentials (Plan Role)
+      uses: aws-actions/configure-aws-credentials@v2
+      with:
+        role-to-assume: ${{ secrets.AWS_ROLE_ARN_PLAN }}
+        aws-region: eu-central-1
+
+    - name: Setup Terraform
+      uses: hashicorp/setup-terraform@v2
+      with:
+        terraform_version: 1.5.0
+
+    - name: Setup TFLint
+      uses: terraform-linters/setup-tflint@v3
+      with:
+        tflint_version: v0.44.1
+
+    - name: Terraform Init
+      run: terraform init
+
+    - name: Terraform Fmt
+      run: terraform fmt -check
+
+    - name: Terraform Validate
+      run: terraform validate
+
+    - name: TFLint Run
+      run: |
+        tflint --init
+        tflint
+
+    - name: Terraform Plan
+      run: terraform plan -out=tfplan
+
+    - name: Upload Terraform Plan
+      uses: actions/upload-artifact@v4
+      with:
+        name: tfplan
+        path: ./Static-v2/envs/dev/tfplan
+
+
+  terraform-apply:
+    name: 'Terraform Apply'
+    needs: terraform-plan
+    runs-on: ubuntu-latest
+    environment: production
+    defaults:
+      run:
+        working-directory: ./Static-v2/envs/dev
+
+    steps:
+    - name: Checkout Code
+      uses: actions/checkout@v3
+
+    - name: Configure AWS Credentials (Apply Role)
+      uses: aws-actions/configure-aws-credentials@v2
+      with:
+        role-to-assume: ${{ secrets.AWS_ROLE_ARN_APPLY }}
+        aws-region: eu-central-1
+
+    - name: Setup Terraform
+      uses: hashicorp/setup-terraform@v2
+      with:
+        terraform_version: 1.5.0
+
+    - name: Terraform Init
+      run: terraform init
+
+    - name: Download Terraform Plan
+      uses: actions/download-artifact@v4
+      with:
+        name: tfplan
+        path: ./Static-v2/envs/dev
+
+    - name: Terraform Apply
+      run: terraform apply -auto-approve tfplan
