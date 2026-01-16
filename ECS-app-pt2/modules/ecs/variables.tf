@@ -21,11 +21,11 @@ variable "private_subnet_ids" {
 variable "alb_security_group_id" {
   description = "The security group ID for the ALB"
   type        = string
-  
+
 }
 
 variable "target_group_arn" {
   description = "The ARN of the target group for the ALB"
   type        = string
-  
+
 }
