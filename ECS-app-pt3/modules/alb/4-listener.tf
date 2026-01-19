@@ -7,4 +7,6 @@ resource "aws_lb_listener" "http" {
     type             = "forward"
     target_group_arn = aws_lb_target_group.alb_example.arn
   }
+
+  tags = var.tags
 }
