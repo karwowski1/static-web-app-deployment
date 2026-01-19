@@ -14,4 +14,5 @@ resource "aws_lb_target_group" "alb_example" {
         unhealthy_threshold = 2
         healthy_threshold   = 2
     }
+  tags = var.tags  
 }

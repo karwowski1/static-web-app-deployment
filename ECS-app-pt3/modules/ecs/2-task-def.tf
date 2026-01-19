@@ -6,7 +6,7 @@ resource "aws_ecs_task_definition" "ecs_task_def" {
   memory                   = "512"
 
   execution_role_arn = aws_iam_role.ecs_task_execution_role.arn
-
+  tags = var.tags
   container_definitions = jsonencode([
     {
       name      = "${var.project_name}-container"

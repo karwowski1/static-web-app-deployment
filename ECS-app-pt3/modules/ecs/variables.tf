@@ -34,3 +34,8 @@ variable "ecs_cluster_name" {
   description = "Cluster name"
   type        = string
 }
+
+variable "tags" {
+  description = "Tags to apply to resources"
+  type        = map(string)
+}
