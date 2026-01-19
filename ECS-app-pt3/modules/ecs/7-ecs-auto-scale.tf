@@ -1,7 +1,7 @@
 resource "aws_appautoscaling_target" "ecs_target" {
   max_capacity       = 3
   min_capacity       = 1
-  resource_id        = "service/${aws_ecs_cluster.ecs_cluster_name.id}/${aws_ecs_service.ecs_service.id}"
+  resource_id        = "service/${aws_ecs_cluster.ecs_cluster.name}/${aws_ecs_service.ecs_service.name}"
   scalable_dimension = "ecs:service:DesiredCount"
   service_namespace  = "ecs"
 }
@@ -37,7 +37,7 @@ resource "aws_cloudwatch_metric_alarm" "cpu_high" {
 
   dimensions = {
     ClusterName = var.ecs_cluster_name
-    ServiceName = aws_ecs_service.ecs_service_name
+    ServiceName = aws_ecs_service.ecs_service.name
   }
 
   alarm_description = "This metric monitors ECS cpu utilization"
@@ -75,7 +75,7 @@ resource "aws_cloudwatch_metric_alarm" "cpu_low" {
 
   dimensions = {
     ClusterName = var.ecs_cluster_name
-    ServiceName = aws_ecs_service.ecs_service_name
+    ServiceName = aws_ecs_service.ecs_service.name
   }
 
   alarm_description = "This metric monitors ECS cpu utilization"
