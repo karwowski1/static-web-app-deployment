@@ -29,3 +29,8 @@ variable "target_group_arn" {
   type        = string
 
 }
+
+variable "ecs_cluster_name" {
+  description = "Cluster name"
+  type        = string
+}
