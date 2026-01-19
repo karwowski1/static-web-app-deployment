@@ -11,4 +11,12 @@ terraform {
         version = "~> 5.0"
         }
   }
+    backend "s3" {
+    bucket       = "ecs-app-pt3-s3-state" 
+    key          = "dev/ecs-app/terraform.tfstate"
+    region       = "eu-central-1"
+
+    use_lockfile = true
+    encrypt      = true
+  }
 }

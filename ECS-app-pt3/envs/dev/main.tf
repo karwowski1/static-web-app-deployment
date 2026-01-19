@@ -17,10 +17,11 @@ module "ecr" {
 
 module "ecs" {
   source = "../../modules/ecs"
-  project_name       = local.project_name
-  vpc_id             = module.vpc.vpc_id
-  private_subnet_ids = module.vpc.private_subnet_ids
-  container_image    = module.ecr.repository_url
+  project_name          = local.project_name
+  vpc_id                = module.vpc.vpc_id
+  private_subnet_ids    = module.vpc.private_subnet_ids
+  container_image       = module.ecr.repository_url
   alb_security_group_id = module.alb.alb_security_group_id
   target_group_arn      = module.alb.target_group_arn
+  ecs_cluster_name      = "${local.project_name}-cluster"
 }
