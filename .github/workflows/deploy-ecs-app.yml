@@ -105,7 +105,7 @@ jobs:
           ECR_REPOSITORY: ecs-app-pt3-ecr-repo
           IMAGE_TAG: ${{ github.sha }}
         run: |
-          docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG ../../../app
+          docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG ../../modules/app
           docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
   
   terraform-destroy:
