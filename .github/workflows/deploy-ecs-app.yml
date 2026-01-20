@@ -1,0 +1,137 @@
+name: "ECS-app-pt3 Pipeline"
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'ECS-app-pt3/**'
+      - '.github/workflows/deploy-ecs-app.yml'
+
+  workflow_dispatch:  
+
+permissions:
+  id-token: write
+  contents: read
+
+concurrency:
+  group: terraform-state-lock
+  cancel-in-progress: false
+
+jobs:
+  terraform-plan:
+    name: "Init and Plan"
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./ECS-app-pt3/envs/dev
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN_PLAN }}
+          aws-region: eu-central-1
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+
+      - name: Setup TFLint
+        uses: terraform-linters/setup-tflint@v4
+        with:
+          tflint_version: v0.50.0
+
+      - name: Init TFLint
+        run: tflint --init
+
+      - name: Terraform Init & Validate
+        run: |
+          terraform init
+          terraform fmt -check
+          terraform validate
+          tflint -f compact
+
+      - name: Terraform Plan
+        run: terraform plan -out=tfplan -input=false
+
+      - name: Upload Plan Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: tfplan
+          path: ./ECS-app-pt3/envs/dev/tfplan
+
+  terraform-apply:
+    name: "Apply (Manual)"
+    needs: terraform-plan
+    runs-on: ubuntu-latest
+    environment: production
+    defaults:
+      run:
+        working-directory: ./ECS-app-pt3/envs/dev
+    
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN_APPLY }}
+          aws-region: eu-central-1
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+
+      - name: Terraform Init
+        run: terraform init
+
+      - name: Download Plan Artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: tfplan
+          path: ./ECS-app-pt3/envs/dev
+
+      - name: Terraform Apply
+        run: terraform apply -auto-approve tfplan
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build and Push Docker Image
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          ECR_REPOSITORY: ecs-app-pt3-ecr-repo
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG ../../../app
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+  
+  terraform-destroy:
+    name: "Destroy (Manual)"
+    needs: terraform-apply
+    runs-on: ubuntu-latest
+    environment: production 
+    defaults:
+      run:
+        working-directory: ./ECS-app-pt3/envs/dev
+    
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN_APPLY }}
+          aws-region: eu-central-1
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+
+      - name: Terraform Init
+        run: terraform init
+
+      - name: Terraform Destroy
+        run: terraform destroy -auto-approve        
