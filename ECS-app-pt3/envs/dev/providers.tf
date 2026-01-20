@@ -1,20 +1,20 @@
 provider "aws" {
-    region = var.region
+  region = var.region
 }
 
 terraform {
-    required_version = ">= 1.0.0"
-    
-    required_providers {
-        aws = {
-        source  = "hashicorp/aws"
-        version = "~> 5.0"
-        }
+  required_version = ">= 1.0.0"
+
+  required_providers {
+    aws = {
+      source  = "hashicorp/aws"
+      version = "~> 5.0"
+    }
   }
-    backend "s3" {
-    bucket       = "ecs-app-pt3-s3-state" 
-    key          = "dev/ecs-app/terraform.tfstate"
-    region       = "eu-central-1"
+  backend "s3" {
+    bucket = "ecs-app-pt3-s3-state"
+    key    = "dev/ecs-app/terraform.tfstate"
+    region = "eu-central-1"
 
     use_lockfile = true
     encrypt      = true

@@ -4,16 +4,16 @@ variable "vpc_cidr" {
 }
 
 variable "project_name" {
-    description = "Name of the project"
-    type = string
+  description = "Name of the project"
+  type        = string
 }
 
 variable "environment" {
   description = "Env name"
-  type = string
+  type        = string
 }
 
 variable "region" {
   description = "Which region"
-  type = string
+  type        = string
 }
