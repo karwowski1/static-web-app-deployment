@@ -2,7 +2,7 @@ module "vpc" {
   source   = "../../modules/vpc"
   vpc_cidr = var.vpc_cidr
 
-  tags     = local.common_tags
+  tags = local.common_tags
 }
 
 module "alb" {
@@ -11,18 +11,18 @@ module "alb" {
   public_subnet_ids = module.vpc.public_subnet_ids
   project_name      = var.project_name
 
-  tags              = local.common_tags
+  tags = local.common_tags
 }
 
 module "ecr" {
-  source        = "../../modules/ecr"
-  project_name  = var.project_name
+  source       = "../../modules/ecr"
+  project_name = var.project_name
 
-  tags          = local.common_tags
+  tags = local.common_tags
 }
 
 module "ecs" {
-  source = "../../modules/ecs"
+  source                = "../../modules/ecs"
   project_name          = var.project_name
   vpc_id                = module.vpc.vpc_id
   private_subnet_ids    = module.vpc.private_subnet_ids
@@ -31,5 +31,5 @@ module "ecs" {
   target_group_arn      = module.alb.target_group_arn
   ecs_cluster_name      = "${var.project_name}-cluster"
 
-  tags                  = local.common_tags
+  tags = local.common_tags
 }

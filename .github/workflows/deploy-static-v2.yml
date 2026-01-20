@@ -5,7 +5,7 @@ on:
     branches: [ main ]
     paths:
       - 'Static-v2/**'
-      - '.github/workflows/**'
+      - '.github/workflows/deploy-static-v2.yml'
   
   workflow_dispatch:
 
