@@ -41,7 +41,7 @@ resource "aws_cloudwatch_metric_alarm" "cpu_high" {
   }
 
   alarm_description = "This metric monitors ECS cpu utilization"
-  alarm_actions     = [aws_appautoscaling_policy.scale_up.arn]
+  alarm_actions     = [aws_appautoscaling_policy.scale_out.arn]
 }
 
 resource "aws_appautoscaling_policy" "scale_in" {
@@ -79,5 +79,5 @@ resource "aws_cloudwatch_metric_alarm" "cpu_low" {
   }
 
   alarm_description = "This metric monitors ECS cpu utilization"
-  alarm_actions     = [aws_appautoscaling_policy.scale_down.arn]
+  alarm_actions     = [aws_appautoscaling_policy.scale_in.arn]
 }
