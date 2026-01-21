@@ -6,7 +6,7 @@ resource "aws_appautoscaling_target" "ecs_target" {
   service_namespace  = "ecs"
 }
 
-resource "aws_appautoscaling_policy" "scale_up" {
+resource "aws_appautoscaling_policy" "scale_out" {
   name               = "scale-up"
   policy_type        = "StepScaling"
   resource_id        = aws_appautoscaling_target.ecs_target.resource_id
@@ -44,7 +44,7 @@ resource "aws_cloudwatch_metric_alarm" "cpu_high" {
   alarm_actions     = [aws_appautoscaling_policy.scale_up.arn]
 }
 
-resource "aws_appautoscaling_policy" "scale_down" {
+resource "aws_appautoscaling_policy" "scale_in" {
   name               = "scale-down"
   policy_type        = "StepScaling"
   resource_id        = aws_appautoscaling_target.ecs_target.resource_id
