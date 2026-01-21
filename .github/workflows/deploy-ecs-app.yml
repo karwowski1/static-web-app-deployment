@@ -53,7 +53,7 @@ jobs:
           tflint -f compact
 
       - name: Terraform Plan
-        run: terraform plan -out=tfplan -input=false -lock=false -var-file="terraform.tfvars"
+        run: terraform plan -out=tfplan -input=false -var-file="terraform.tfvars"
 
       - name: Upload Plan Artifact
         uses: actions/upload-artifact@v4
