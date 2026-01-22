@@ -16,7 +16,7 @@ jobs:
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: ./envs/dev
+        working-directory: ECS-app-pt3/envs/dev
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
@@ -36,7 +36,7 @@ jobs:
           terraform fmt -check
           terraform validate
 
-      - name: Create ECR Repo Only
+      - name: Create ECR Repo
         run: terraform apply -target=module.ecr -var="image_tag=bootstrap" -auto-approve
 
       - name: Login to Amazon ECR
