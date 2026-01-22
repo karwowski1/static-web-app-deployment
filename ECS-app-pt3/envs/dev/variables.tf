@@ -17,3 +17,8 @@ variable "region" {
   description = "Which region"
   type        = string
 }
+
+variable "image_tag" {
+  description = "Tag obrazu Dockera"
+  type        = string
+}

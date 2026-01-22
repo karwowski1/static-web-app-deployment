@@ -6,8 +6,7 @@ on:
     paths:
       - 'ECS-app-pt3/**'
       - '.github/workflows/deploy-ecs-app.yml'
-
-  workflow_dispatch:  
+  workflow_dispatch:
 
 permissions:
   id-token: write
@@ -18,8 +17,9 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  # Plan
   terraform-plan:
-    name: "Init and Plan"
+    name: "Terraform Plan & Lint"
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -45,7 +45,7 @@ jobs:
       - name: Init TFLint
         run: tflint --init
 
-      - name: Terraform Init & Validate
+      - name: Terraform Init, Format & Validate
         run: |
           terraform init
           terraform fmt -check
@@ -53,6 +53,8 @@ jobs:
           tflint -f compact
 
       - name: Terraform Plan
+        env:
+          TF_VAR_image_tag: ${{ github.sha }}
         run: terraform plan -out=tfplan -input=false
 
       - name: Upload Plan Artifact
@@ -61,11 +63,55 @@ jobs:
           name: tfplan
           path: ./ECS-app-pt3/envs/dev/tfplan
 
-  terraform-apply:
-    name: "Apply (Manual)"
+  # Image build
+  docker-build-push:
+    name: "Docker Build & Push"
     needs: terraform-plan
     runs-on: ubuntu-latest
-    environment: production
+    defaults:
+      run:
+        working-directory: ./ECS-app-pt3/envs/dev
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN_APPLY }}
+          aws-region: eu-central-1
+
+      # Bootstrap ECR (Jajko i Kura)
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+
+      - name: Create ECR Repo Only
+        run: |
+          terraform init
+          terraform apply -target=module.ecr -var="image_tag=bootstrap" -auto-approve
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build and Push
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          ECR_REPOSITORY: ecs-app-pt3-ecr-repo
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          cd ../../.. 
+          docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG ./ECS-app-pt3/modules/app
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+
+  # Apply (Manual)
+  terraform-apply:
+    name: "Terraform Apply"
+    needs: [terraform-plan, docker-build-push]
+    runs-on: ubuntu-latest
+    
+    environment: production 
+    
     defaults:
       run:
         working-directory: ./ECS-app-pt3/envs/dev
@@ -93,17 +139,6 @@ jobs:
           path: ./ECS-app-pt3/envs/dev
 
       - name: Terraform Apply
-        run: terraform apply -auto-approve tfplan
-
-      - name: Login to Amazon ECR
-        id: login-ecr
-        uses: aws-actions/amazon-ecr-login@v2
-
-      - name: Build and Push Docker Image
         env:
-          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-          ECR_REPOSITORY: ecs-app-pt3-ecr-repo
-          IMAGE_TAG: ${{ github.sha }}
-        run: |
-          docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG ../../modules/app
-          docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+          TF_VAR_image_tag: ${{ github.sha }}
+        run: terraform apply -auto-approve tfplan

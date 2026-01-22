@@ -30,6 +30,6 @@ module "ecs" {
   alb_security_group_id = module.alb.alb_security_group_id
   target_group_arn      = module.alb.target_group_arn
   ecs_cluster_name      = "${var.project_name}-cluster"
-
+  image_tag = var.image_tag
   tags = local.common_tags
 }
