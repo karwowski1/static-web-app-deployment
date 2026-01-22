@@ -28,7 +28,7 @@ resource "aws_iam_policy" "tf_backend_access" {
   })
 }
 
-# --- ROLA 1: PLAN (ReadOnly + State Access)
+# ROLA 1: PLAN (ReadOnly + State Access)
 resource "aws_iam_role" "plan_role" {
   name = "GitHubActions-Plan"
 
@@ -55,7 +55,7 @@ resource "aws_iam_role_policy_attachment" "plan_backend" {
   policy_arn = aws_iam_policy.tf_backend_access.arn
 }
 
-# --- ROLA 2: APPLY
+# ROLA 2: APPLY
 resource "aws_iam_role" "apply_role" {
   name = "GitHubActions-Apply"
 
