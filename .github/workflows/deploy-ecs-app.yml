@@ -1,4 +1,4 @@
-name: "ECS-app-pt3 Pipeline"
+name: "ECS-app-pt3 Production Pipeline"
 
 on:
   push:
@@ -10,12 +10,11 @@ permissions:
   contents: read
 
 jobs:
-  prepare-and-docker:
-    name: "Bootstrap & Docker"
+  # KROK 1: Przygotowanie (Bootstrap ECR + Docker)
+  # Musi być pierwszy, żeby stworzyć ECR i wrzucić tam obraz
+  build-and-push:
+    name: "Bootstrap ECR & Docker Build"
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: ECS-app-pt3/envs/dev
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
@@ -29,37 +28,34 @@ jobs:
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
 
-      - name: Terraform Init & Format Check
+      # 1. Bootstrap ECR
+      # Wchodzimy do envs/dev (bez ECS-app-pt3 w ścieżce)
+      - name: Create ECR Repo Only
         run: |
+          cd envs/dev
           terraform init
-          terraform fmt -check
-          terraform validate
-
-      - name: Create ECR Repo
-        run: terraform apply -target=module.ecr -var="image_tag=bootstrap" -auto-approve
+          terraform apply -target=module.ecr -var="image_tag=bootstrap" -auto-approve
 
       - name: Login to Amazon ECR
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v2
 
+      # 2. Docker Build
+      # Budujemy wskazując folder modules/app względem korzenia repozytorium
       - name: Build and Push Docker Image
         env:
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
           ECR_REPOSITORY: ecs-app-pt3-ecr-repo
           IMAGE_TAG: ${{ github.sha }}
         run: |
-          cd ../..
-          docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG ../../modules/app
+          docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG ./modules/app
           docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
 
-  # Plan
+  # KROK 2: Planowanie zmian w infrastrukturze
   terraform-plan:
     name: "Terraform Plan"
-    needs: prepare-and-docker
+    needs: build-and-push
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: ECS-app-pt3/envs/dev
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
@@ -73,29 +69,26 @@ jobs:
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
 
-      - name: Terraform Init
-        run: terraform init
-
-      - name: Terraform Plan
+      - name: Terraform Init & Plan
         env:
           TF_VAR_image_tag: ${{ github.sha }}
-        run: terraform plan -out=tfplan -input=false
+        run: |
+          cd envs/dev
+          terraform init
+          terraform plan -out=tfplan -input=false
 
       - name: Upload Plan Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: tfplan
-          path: ECS-app-pt3/envs/dev/tfplan
+          name: tfplan-artifact
+          path: envs/dev/tfplan
 
-  # Apply
+  # KROK 3: Wdrożenie (Wymaga zatwierdzenia jeśli skonfigurowałeś environment)
   terraform-apply:
     name: "Terraform Apply"
     needs: terraform-plan
     runs-on: ubuntu-latest
     environment: production
-    defaults:
-      run:
-        working-directory: ECS-app-pt3/envs/dev
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
@@ -110,15 +103,19 @@ jobs:
         uses: hashicorp/setup-terraform@v3
 
       - name: Terraform Init
-        run: terraform init
+        run: |
+          cd envs/dev
+          terraform init
 
       - name: Download Plan Artifact
         uses: actions/download-artifact@v4
         with:
-          name: tfplan
-          path: ECS-app-pt3/envs/dev
+          name: tfplan-artifact
+          path: envs/dev
 
       - name: Terraform Apply
         env:
           TF_VAR_image_tag: ${{ github.sha }}
-        run: terraform apply -auto-approve tfplan
+        run: |
+          cd envs/dev
+          terraform apply -auto-approve tfplan
