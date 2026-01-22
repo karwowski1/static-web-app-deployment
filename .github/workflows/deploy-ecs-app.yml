@@ -10,7 +10,6 @@ permissions:
   contents: read
 
 jobs:
-  # Docker & ECR
   prepare-and-docker:
     name: "Bootstrap & Docker"
     runs-on: ubuntu-latest
@@ -60,7 +59,7 @@ jobs:
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: ./envs/dev
+        working-directory: ECS-app-pt3/envs/dev
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
@@ -96,7 +95,7 @@ jobs:
     environment: production
     defaults:
       run:
-        working-directory: ./envs/dev
+        working-directory: ECS-app-pt3/envs/dev
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
