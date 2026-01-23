@@ -1,0 +1,87 @@
+name: Reusable Terraform Pipeline (OIDC & Best Practices)
+
+on:
+  workflow_call:
+    inputs:
+      working-directory:
+        required: true
+        type: string
+        description: "Terraform Directory"
+      aws-region:
+        required: true
+        type: string
+    secrets: 
+      AWS_ROLE_ARN_PLAN:
+        required: true
+      AWS_ROLE_ARN_APPLY:
+        required: true
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+# This is for OIDC
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  plan:
+    name: "Terraform Plan"
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN_PLAN }}
+          aws-region: ${{ inputs.aws-region }}
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+
+      - name: Terraform Init & Plan
+        run: |
+          terraform init
+          terraform plan -out=tfplan -input=false
+        working-directory: ${{ inputs.working-directory }}
+
+      - name: Upload Plan Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: tfplan-artifact
+          path: ${{ inputs.working-directory }}/tfplan
+
+  apply:
+    name: "Terraform Apply"
+    needs: plan
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN_APPLY }}
+          aws-region: ${{ inputs.aws-region }}
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+
+      - name: Terraform Init
+        run: terraform init
+        working-directory: ${{ inputs.working-directory }}
+
+      - name: Download Plan Artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: tfplan-artifact
+          path: ${{ inputs.working-directory }}
+
+      - name: Terraform Apply
+        run: terraform apply -auto-approve tfplan
+        working-directory: ${{ inputs.working-directory }}

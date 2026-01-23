@@ -12,9 +12,13 @@ permissions:
   id-token: write
   contents: read
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true 
+
 jobs:
   build-and-push:
-    name: "Bootstrap ECR & Docker Build"
+    name: "ECR & Docker Build"
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Code
