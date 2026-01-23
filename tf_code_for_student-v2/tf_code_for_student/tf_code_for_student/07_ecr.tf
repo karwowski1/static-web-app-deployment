@@ -4,6 +4,9 @@
 resource "aws_ecr_repository" "app" {
   name                 = "${var.name}-app"
   image_tag_mutability = "MUTABLE"
+
+  force_delete = true
+
   tags = {
     Name = "${var.name}-app"
   }

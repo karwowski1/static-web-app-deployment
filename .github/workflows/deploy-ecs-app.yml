@@ -1,4 +1,4 @@
-name: "ECS-app-pt3 Production Pipeline (FINAL)"
+name: "ECS-app-pt3 Pipeline"
 
 on:
   push:
@@ -13,7 +13,6 @@ permissions:
   contents: read
 
 jobs:
-  # KROK 1: Budowanie i wypychanie
   build-and-push:
     name: "Bootstrap ECR & Docker Build"
     runs-on: ubuntu-latest
@@ -30,7 +29,6 @@ jobs:
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
 
-      # 1. Bootstrap ECR
       - name: Create ECR Repo Only
         run: |
           cd ECS-app-pt3/envs/dev
@@ -41,7 +39,6 @@ jobs:
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v2
 
-      # 2. Docker Build (Ścieżka do folderu z Dockerfile)
       - name: Build and Push Docker Image
         env:
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
@@ -51,7 +48,6 @@ jobs:
           docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG ECS-app-pt3/modules/app
           docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
 
-  # KROK 2: Planowanie
   terraform-plan:
     name: "Terraform Plan"
     needs: build-and-push
@@ -83,7 +79,6 @@ jobs:
           name: tfplan-artifact
           path: ECS-app-pt3/envs/dev/tfplan
 
-  # KROK 3: Wdrożenie
   terraform-apply:
     name: "Terraform Apply"
     needs: terraform-plan
