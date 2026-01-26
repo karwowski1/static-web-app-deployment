@@ -5,7 +5,7 @@ on:
     branches: [ '**' ]
     paths:
       - '07-ECS-app-pt3/modules/app/**'           
-      - '.github/workflows/01-docker-app.yml'  
+      - '.github/workflows/01-docker.yml'  
 
 permissions:
   id-token: write

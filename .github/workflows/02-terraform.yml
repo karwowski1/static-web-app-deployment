@@ -6,7 +6,7 @@ on:
     paths:
       - '07-ECS-app-pt3/**'                       
       - '!07-ECS-app-pt3/modules/app/**'          
-      - '.github/workflows/02-terraform-infra.yml'
+      - '.github/workflows/02-terraform.yml'
 
 permissions:
   id-token: write
