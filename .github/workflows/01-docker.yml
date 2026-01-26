@@ -1,11 +1,11 @@
-name: "1. App CI (Docker)"
+name: "Docker pipeline"
 
 on:
   push:
     branches: [ '**' ]
     paths:
-      - 'ECS-app-pt3/modules/app/**'           
-      - '.github/workflows/01-docker-app.yml'  
+      - '07-ECS-app-pt3/modules/app/**'           
+      - '.github/workflows/01-docker.yml'  
 
 permissions:
   id-token: write
@@ -33,7 +33,7 @@ jobs:
           ECR_REPO: ecs-app-pt3-ecr-repo
           IMAGE_TAG: ${{ github.sha }}
         run: |
-          cd ECS-app-pt3/modules/app
+          cd 07-ECS-app-pt3/modules/app
           docker build -t $ECR_REGISTRY/$ECR_REPO:$IMAGE_TAG .
           docker push $ECR_REGISTRY/$ECR_REPO:$IMAGE_TAG
           docker tag $ECR_REGISTRY/$ECR_REPO:$IMAGE_TAG $ECR_REGISTRY/$ECR_REPO:latest
