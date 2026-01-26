@@ -39,3 +39,8 @@ variable "tags" {
   description = "Tags to apply to resources"
   type        = map(string)
 }
+
+variable "image_tag" {
+  description = "ECR image tag"
+  type = string
+}
