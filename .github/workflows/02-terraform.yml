@@ -1,10 +1,10 @@
-name: "2. Infra CD (Terraform)"
+name: "Terraform pipeline"
 
 on:
   push:
     branches: [ '**' ]
     paths:
-      - 'ECS-app-pt3/**'                       
+      - '07-ECS-app-pt3/**'                       
       - '!ECS-app-pt3/modules/app/**'          
       - '.github/workflows/02-terraform-infra.yml'
 
@@ -32,7 +32,7 @@ jobs:
 
       - name: Init & Plan
         run: |
-          cd ECS-app-pt3/envs/dev
+          cd 07-ECS-app-pt3/envs/dev
           terraform init
           terraform plan -out=tfplan -input=false -var="image_tag=latest"
 
@@ -59,7 +59,7 @@ jobs:
 
       - name: Init
         run: |
-          cd ECS-app-pt3/envs/dev
+          cd 07-ECS-app-pt3/envs/dev
           terraform init
 
       - name: Download Plan
@@ -70,5 +70,5 @@ jobs:
 
       - name: Apply
         run: |
-          cd ECS-app-pt3/envs/dev
+          cd 07-ECS-app-pt3/envs/dev
           terraform apply -auto-approve tfplan
