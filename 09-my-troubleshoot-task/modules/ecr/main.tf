@@ -2,7 +2,7 @@
 # ECR
 # -----------------
 resource "aws_ecr_repository" "app" {
-  name                 = "${var.name}-app"
+  name                 = "${var.name}-ecr-repo"
   image_tag_mutability = "MUTABLE"
 
   force_delete = true
