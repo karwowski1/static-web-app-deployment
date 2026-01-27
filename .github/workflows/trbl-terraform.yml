@@ -1,0 +1,17 @@
+name: TRBL Terraform
+
+on:
+  push:
+    branches: [ '**' ]
+    paths:
+      - '09-my-troubleshoot-task/envs/dev/**'
+
+jobs:
+  call-terraform-reusable:
+    uses: ./.github/workflows/reusable.yml
+    with:
+      working-directory: '09-my-troubleshoot-task/envs/dev'
+      aws-region: 'eu-central-1'
+    secrets:
+      AWS_ROLE_ARN_PLAN: ${{ secrets.AWS_ROLE_ARN_PLAN }}
+      AWS_ROLE_ARN_APPLY: ${{ secrets.AWS_ROLE_ARN_APPLY }}
