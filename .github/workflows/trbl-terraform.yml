@@ -5,7 +5,7 @@ on:
     branches: [ '**' ]
     paths:
       - '09-my-troubleshoot-task/envs/dev/**'
-
+      - '.github/workflows/trbl-terraform.yml' 
 jobs:
   call-terraform-reusable:
     uses: ./.github/workflows/reusable.yml

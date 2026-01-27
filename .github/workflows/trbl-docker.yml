@@ -2,10 +2,10 @@ name: TRBL Docker
 
 on:
   push:
-    branches: [ '**']
+    branches: [ '**' ]
     paths:
       - '09-my-troubleshoot-task/modules/app/**'
-
+      - '.github/workflows/trbl-docker.yml' 
 permissions:
   id-token: write
   contents: read
