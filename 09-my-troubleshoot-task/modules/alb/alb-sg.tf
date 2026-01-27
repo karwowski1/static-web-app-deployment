@@ -4,7 +4,7 @@
 resource "aws_security_group" "alb" {
   name        = "${var.name}-alb-sg"
   description = "ALB security group"
-  vpc_id      = aws_vpc.main.id
+  vpc_id      = var.vpc_id
 
   ingress {
     protocol        = "tcp"
@@ -19,5 +19,4 @@ resource "aws_security_group" "alb" {
     cidr_blocks = ["0.0.0.0/0"]
   }
 
-  depends_on = [aws_vpc.main]
 }

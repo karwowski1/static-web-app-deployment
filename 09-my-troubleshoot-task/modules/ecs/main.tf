@@ -74,7 +74,7 @@ resource "aws_ecs_service" "web" {
   platform_version = "1.4.0"
 
   network_configuration {
-    subnets          = [aws_subnet.private_a.id, aws_subnet.private_b.id]
+    subnets          = var.subnet_ids
     security_groups  = [aws_security_group.tasks.id]
     assign_public_ip = false 
   }
@@ -82,7 +82,7 @@ resource "aws_ecs_service" "web" {
   load_balancer {
     container_name   = "web"
     container_port   = var.container_port
-    target_group_arn = aws_lb_target_group.web.arn
+    target_group_arn = var.target_group_arn
   }
 
   deployment_controller {
@@ -98,13 +98,5 @@ resource "aws_ecs_service" "web" {
     ignore_changes = [desired_count] 
   }
 
-  depends_on = [
-    aws_subnet.private_a,
-    aws_subnet.private_b,
-    aws_security_group.tasks,
-    aws_lb_target_group.web,
-    aws_ecs_cluster.this,
-    aws_ecs_task_definition.web
-  ]
 }
 

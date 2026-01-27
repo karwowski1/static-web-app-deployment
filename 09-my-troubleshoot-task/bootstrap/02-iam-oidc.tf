@@ -1,11 +1,9 @@
-resource "aws_iam_openid_connect_provider" "github" {
+data "aws_iam_openid_connect_provider" "github" {
   url             = "https://token.actions.githubusercontent.com"
-  client_id_list  = ["sts.amazonaws.com"]
-  thumbprint_list = ["6938fd4d98bab03faadb97b34396831e3780aea1", "1c58a3a8518e8759bf075b76b750d4f2df264fcd"]
 }
 
 resource "aws_iam_policy" "tf_backend_access" {
-  name        = "TerraformBackendAccess"
+  name        = "TerraformBackendAccess-troubleshoot-task"
   description = "Access to S3 state locks"
 
   policy = jsonencode({
@@ -30,14 +28,14 @@ resource "aws_iam_policy" "tf_backend_access" {
 
 # ROLA 1: PLAN (ReadOnly + State Access)
 resource "aws_iam_role" "plan_role" {
-  name = "GitHubActions-Plan"
+  name = "GitHubActions-Plan-troubleshoot-task"
 
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
     Statement = [{
       Action = "sts:AssumeRoleWithWebIdentity"
       Effect = "Allow"
-      Principal = { Federated = aws_iam_openid_connect_provider.github.arn }
+      Principal = { Federated = data.aws_iam_openid_connect_provider.github.arn }
       Condition = {
         StringLike = { "token.actions.githubusercontent.com:sub" : "repo:${var.github_repo}:*" }
       }
@@ -57,14 +55,14 @@ resource "aws_iam_role_policy_attachment" "plan_backend" {
 
 # ROLA 2: APPLY
 resource "aws_iam_role" "apply_role" {
-  name = "GitHubActions-Apply"
+  name = "GitHubActions-Apply-troubleshoot-task"
 
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
     Statement = [{
       Action = "sts:AssumeRoleWithWebIdentity"
       Effect = "Allow"
-      Principal = { Federated = aws_iam_openid_connect_provider.github.arn }
+      Principal = { Federated = data.aws_iam_openid_connect_provider.github.arn }
       Condition = {
         StringLike = { "token.actions.githubusercontent.com:sub" : "repo:${var.github_repo}:*" }
       }

@@ -4,29 +4,6 @@ variable "vpc_cidr" {
   default     = "10.0.0.0/16"
 }
 
-variable "vpc_id" {
-  type        = string
-  description = "The ID of the existing VPC"
-}
-
-variable "subnet_ids" {
-  type        = list(string)
-  description = "List of subnet IDs in the existing VPC"
-  
-}
-
-variable "security_group_id_ecs" {
-  type        = string
-  description = "The security group ID for the ECS service"
-  
-}
-
-variable "security_group_id_alb" {
-  type        = string
-  description = "The security group ID for the ALB"
-  
-}
-
 variable "name" {
   type        = string
   description = "Prefix for resource names"
