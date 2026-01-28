@@ -5,18 +5,18 @@ on:
     branches: [ '**' ]
     paths:
       - '09-my-troubleshoot-task/envs/dev/**'
-      - '.github/workflows/trbl-terraform.yml' 
+      - '.github/workflows/trbl-terraform.yml'
 
 permissions:
   id-token: write
   contents: read
-      
+
 jobs:
   call-terraform-reusable:
     uses: ./.github/workflows/reusable.yml
     with:
       working-directory: '09-my-troubleshoot-task/envs/dev'
       aws-region: 'eu-central-1'
-    secrets:
-      AWS_ROLE_ARN_PLAN: ${{ secrets.AWS_ROLE_ARN_PLAN }}
-      AWS_ROLE_ARN_APPLY: ${{ secrets.AWS_ROLE_ARN_APPLY }}
+      # Podajemy ARNy bezpośrednio jako stringi (inputs)
+      aws-role-plan: "arn:aws:iam::858986858999:role/GitHubActions-Plan-troubleshoot-task"
+      aws-role-apply: "arn:aws:iam::858986858999:role/GitHubActions-Apply-troubleshoot-task"

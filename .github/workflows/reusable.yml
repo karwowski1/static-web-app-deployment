@@ -17,7 +17,8 @@ on:
         type: string
 
 jobs:
-  terraform_plan:
+  plan:
+    name: "Terraform Plan"
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -42,9 +43,9 @@ jobs:
           name: tfplan-artifact
           path: ${{ inputs.working-directory }}/tfplan
 
-  terraform_apply:
+  apply:
     name: "Terraform Apply"
-    needs: terraform_plan
+    needs: plan
     runs-on: ubuntu-latest
     environment: production
     steps:
@@ -54,7 +55,8 @@ jobs:
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          role-to-assume: ${{ inputs.aws-role-apply }}
+          # TU BYŁ BŁĄD - zmieniono z secrets na inputs
+          role-to-assume: ${{ inputs.aws-role-apply }} 
           aws-region: ${{ inputs.aws-region }}
 
       - name: Setup Terraform
