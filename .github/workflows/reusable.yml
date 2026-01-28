@@ -1,4 +1,4 @@
-name: Reusable Terraform Pipeline (OIDC & Best Practices)
+name: Reusable Terraform Pipeline
 
 on:
   workflow_call:
@@ -6,37 +6,25 @@ on:
       working-directory:
         required: true
         type: string
-        description: "Terraform Directory"
       aws-region:
         required: true
         type: string
-    secrets: 
-      AWS_ROLE_ARN_PLAN:
+      aws-role-plan:
         required: true
-      AWS_ROLE_ARN_APPLY:
+        type: string
+      aws-role-apply:
         required: true
-
-concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
-
-# This is for OIDC
-permissions:
-  id-token: write
-  contents: read
+        type: string
 
 jobs:
-  plan:
-    name: "Terraform Plan"
+  terraform_plan:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout Code
-        uses: actions/checkout@v4
-
+      - uses: actions/checkout@v4
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          role-to-assume: ${{ secrets.AWS_ROLE_ARN_PLAN }}
+          role-to-assume: ${{ inputs.aws-role-plan }}
           aws-region: ${{ inputs.aws-region }}
 
       - name: Setup Terraform
@@ -54,9 +42,9 @@ jobs:
           name: tfplan-artifact
           path: ${{ inputs.working-directory }}/tfplan
 
-  apply:
+  terraform_apply:
     name: "Terraform Apply"
-    needs: plan
+    needs: terraform_plan
     runs-on: ubuntu-latest
     environment: production
     steps:
@@ -66,7 +54,7 @@ jobs:
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          role-to-assume: ${{ secrets.AWS_ROLE_ARN_APPLY }}
+          role-to-assume: ${{ inputs.aws-role-apply }}
           aws-region: ${{ inputs.aws-region }}
 
       - name: Setup Terraform
