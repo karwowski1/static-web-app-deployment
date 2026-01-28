@@ -17,6 +17,5 @@ jobs:
     with:
       working-directory: '09-my-troubleshoot-task/envs/dev'
       aws-region: 'eu-central-1'
-      # Podajemy ARNy bezpośrednio jako stringi (inputs)
       aws-role-plan: "arn:aws:iam::858986858999:role/GitHubActions-Plan-troubleshoot-task"
       aws-role-apply: "arn:aws:iam::858986858999:role/GitHubActions-Apply-troubleshoot-task"

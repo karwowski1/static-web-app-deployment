@@ -31,7 +31,7 @@ jobs:
       - name: Build and Push
         env:
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-          ECR_REPO: my-troubleshoot-ecr-repo
+          ECR_REPO: my-troubleshoot-ecs-ecr-repo
           IMAGE_TAG: ${{ github.sha }}
         run: |
           cd 09-my-troubleshoot-task/modules/app

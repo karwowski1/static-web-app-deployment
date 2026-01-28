@@ -55,7 +55,6 @@ jobs:
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          # TU BYŁ BŁĄD - zmieniono z secrets na inputs
           role-to-assume: ${{ inputs.aws-role-apply }} 
           aws-region: ${{ inputs.aws-region }}
 
