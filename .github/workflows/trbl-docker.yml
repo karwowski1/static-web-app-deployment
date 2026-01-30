@@ -1,30 +1,27 @@
-name: "Docker pipeline"
+name: TRBL Docker
 
 on:
   push:
     branches: [ '**' ]
     paths:
-      - '07-ECS-app-pt3/modules/app/**'           
-      - '.github/workflows/01-docker.yml'  
+      - '09-my-troubleshoot-task/modules/app/**'
+      - '.github/workflows/trbl-docker.yml' 
 
 permissions:
   id-token: write
   contents: read
 
-concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true 
-
 jobs:
   build-and-push:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout Code
+        uses: actions/checkout@v4
 
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          role-to-assume: ${{ secrets.AWS_ROLE_ARN_APPLY }}
+          role-to-assume: arn:aws:iam::858986858999:role/GitHubActions-Apply-troubleshoot-task
           aws-region: eu-central-1
 
       - name: Login to Amazon ECR
@@ -34,10 +31,10 @@ jobs:
       - name: Build and Push
         env:
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-          ECR_REPO: ecs-app-pt3-ecr-repo
+          ECR_REPO: my-troubleshoot-ecs-ecr-repo
           IMAGE_TAG: ${{ github.sha }}
         run: |
-          cd 07-ECS-app-pt3/modules/app
+          cd 09-my-troubleshoot-task/modules/app
           docker build -t $ECR_REGISTRY/$ECR_REPO:$IMAGE_TAG .
           docker push $ECR_REGISTRY/$ECR_REPO:$IMAGE_TAG
           docker tag $ECR_REGISTRY/$ECR_REPO:$IMAGE_TAG $ECR_REGISTRY/$ECR_REPO:latest

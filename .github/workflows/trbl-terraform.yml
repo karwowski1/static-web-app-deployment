@@ -1,0 +1,21 @@
+name: TRBL Terraform
+
+on:
+  push:
+    branches: [ '**' ]
+    paths:
+      - '09-my-troubleshoot-task/envs/dev/**'
+      - '.github/workflows/trbl-terraform.yml'
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  call-terraform-reusable:
+    uses: ./.github/workflows/reusable.yml
+    with:
+      working-directory: '09-my-troubleshoot-task/envs/dev'
+      aws-region: 'eu-central-1'
+      aws-role-plan: "arn:aws:iam::858986858999:role/GitHubActions-Plan-troubleshoot-task"
+      aws-role-apply: "arn:aws:iam::858986858999:role/GitHubActions-Apply-troubleshoot-task"
