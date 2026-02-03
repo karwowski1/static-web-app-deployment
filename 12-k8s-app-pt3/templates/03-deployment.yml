@@ -1,0 +1,96 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Values.appName }}
+  namespace: {{ .Values.namespace }}
+  labels:
+    app: {{ .Values.appName }}
+spec:
+  selector:
+    matchLabels:
+      app: {{ .Values.appName }}
+  template:
+    metadata:
+      labels:
+        app: {{ .Values.appName }}
+    spec:
+      containers:
+      - name: {{ .Values.appName }}
+        image: nginx:1.21.1
+        ports:
+        - containerPort: {{ .Values.port }}
+        {{- if .Values.livenessProbe.enabled }}
+        livenessProbe:
+          httpGet:
+            path: {{ .Values.livenessProbe.httpGet.path }}
+            port: {{ .Values.livenessProbe.httpGet.port }}
+            httpHeaders:
+              - name: Authorization
+                value: "Basic dXNlcjpwYXNzd29yZA=="  # Base64 encoded "user:password"
+          initialDelaySeconds: {{ .Values.livenessProbe.initialDelaySeconds }}
+          periodSeconds: {{ .Values.livenessProbe.periodSeconds }}
+          timeoutSeconds: {{ .Values.livenessProbe.timeoutSeconds }}
+          failureThreshold: {{ .Values.livenessProbe.failureThreshold }}
+          successThreshold: {{ .Values.livenessProbe.successThreshold }}
+        {{- end }}
+        {{- if .Values.readinessProbe.enabled }}
+        readinessProbe:
+          httpGet:
+            path: {{ .Values.readinessProbe.httpGet.path }}
+            port: {{ .Values.readinessProbe.httpGet.port }}
+            httpHeaders:
+            - name: Authorization
+              value: "Basic dXNlcjpwYXNzd29yZA=="  # Base64 encoded "user:password"
+          initialDelaySeconds: {{ .Values.readinessProbe.initialDelaySeconds }}
+          periodSeconds: {{ .Values.readinessProbe.periodSeconds }}
+          timeoutSeconds: {{ .Values.readinessProbe.timeoutSeconds }}
+          failureThreshold: {{ .Values.readinessProbe.failureThreshold }}
+          successThreshold: {{ .Values.readinessProbe.successThreshold }}
+        {{- end }}
+        {{- if .Values.startupProbe.enabled }}
+        startupProbe:
+          httpGet:
+            path: {{ .Values.startupProbe.httpGet.path }}
+            port: {{ .Values.startupProbe.httpGet.port }}
+            httpHeaders:
+            - name: Authorization
+              value: "Basic dXNlcjpwYXNzd29yZA=="  # Base64 encoded "user:password"           
+          initialDelaySeconds: {{ .Values.startupProbe.initialDelaySeconds }}
+          periodSeconds: {{ .Values.startupProbe.periodSeconds }}
+          timeoutSeconds: {{ .Values.startupProbe.timeoutSeconds }}
+          failureThreshold: {{ .Values.startupProbe.failureThreshold }}
+          successThreshold: {{ .Values.startupProbe.successThreshold }}
+        {{- end }}
+        resources:
+          requests:
+            memory: {{ .Values.memoryRequest }}
+            cpu: {{ .Values.cpuRequest }}
+          limits:
+            memory: {{ .Values.memoryLimit }}
+            cpu: {{ .Values.cpuLimit }}
+        volumeMounts:
+        - name: config-volume
+          mountPath: /etc/nginx/nginx.conf
+          subPath: nginx.conf
+        - name: secret-volume
+          mountPath: /etc/nginx/secrets
+          readOnly: true
+        - name: html-volume
+          mountPath: /usr/share/nginx/html
+        - name: persistent-storage
+          mountPath: /var/log/nginx
+      volumes:
+      - name: config-volume
+        configMap:
+          name: {{ .Values.confName }}
+          optional: false                                     #added optional field
+      - name: secret-volume
+        secret:
+          secretName: {{ .Values.appName }}-secret
+          optional: false                                     #added optional field
+      - name: html-volume
+        configMap:
+          name: {{ .Values.appName }}-html-config
+      - name: persistent-storage
+        persistentVolumeClaim:
+          claimName: {{ .Values.appName }}

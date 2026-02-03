@@ -1,0 +1,53 @@
+appName: nginx-app
+namespace: nginx-app
+port: 80
+targetPortport: 80
+memoryRequest: "64Mi"
+memoryLimit: "128Mi"
+cpuRequest: "250m"
+cpuLimit: "500m"
+protocol: TCP
+serviceType: LoadBalancer
+pvType: local
+storageClassName: manual
+storageSize: 1Gi
+accessMode: ReadWriteOnce
+confName: nginx-config
+replicaCount: 1
+autoscaling:
+  enabled: true
+  minReplicas: 1
+  maxReplicas: 5
+  targetCPUUtilizationPercentage: 80
+  # targetMemoryUtilizationPercentage: 80
+livenessProbe:
+  enabled: true
+  httpGet:
+    path: /
+    port: 80
+  initialDelaySeconds: 30
+  periodSeconds: 10
+  timeoutSeconds: 5
+  failureThreshold: 10
+  successThreshold: 1
+readinessProbe:
+  enabled: true
+  httpGet:
+    path: /
+    port: 80
+  initialDelaySeconds: 15
+  periodSeconds: 10
+  timeoutSeconds: 5
+  failureThreshold: 10
+  successThreshold: 1
+startupProbe:
+  enabled: true
+  httpGet:
+    path: /
+    port: 80
+  initialDelaySeconds: 60
+  periodSeconds: 10
+  timeoutSeconds: 5
+  failureThreshold: 10
+  successThreshold: 1
+
