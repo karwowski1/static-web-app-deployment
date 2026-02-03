@@ -1,0 +1,53 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Values.appName }}
+  namespace: {{ .Values.namespace }}
+  labels:
+    app: {{ .Values.appName }}
+spec:
+  replicas: {{ .Values.replicas }}
+  selector:
+    matchLabels:
+      app: {{ .Values.appName }}
+  template:
+    metadata:
+      labels:
+        app: {{ .Values.appName }}
+    spec:
+      containers:
+      - name: {{ .Values.appName }}
+        image: {{ .Values.image.repository }}:{{ .Values.image.tag }}
+        ports:
+        - containerPort: {{ .Values.port }}
+        resources:
+          requests:
+            memory: {{ .Values.memoryRequest }}
+            cpu: {{ .Values.cpuRequest }}
+          limits:
+            memory: {{ .Values.memoryLimit }}
+            cpu: {{ .Values.cpuLimit }}
+        volumeMounts:
+        - name: config-volume
+          mountPath: /etc/nginx/nginx.conf
+          subPath: nginx.conf
+        - name: secret-volume
+          mountPath: /etc/nginx/secrets
+          readOnly: true
+        - name: html-volume
+          mountPath: /usr/share/nginx/html
+        - name: persistent-storage
+          mountPath: /var/log/nginx
+      volumes:
+      - name: config-volume
+        configMap:
+          name: {{ .Values.appName }}-config
+      - name: secret-volume
+        secret:
+          secretName: {{ .Values.appName }}-secret
+      - name: html-volume
+        configMap:
+          name: {{ .Values.appName }}-html-config
+      - name: persistent-storage
+        persistentVolumeClaim:
+          claimName: {{ .Values.appName }}

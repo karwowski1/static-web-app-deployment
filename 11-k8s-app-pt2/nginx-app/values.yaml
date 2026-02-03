@@ -1,0 +1,19 @@
+appName: mynginx-app
+namespace: mynginx-namespace
+port: 80
+targetPortport: 80
+memoryRequest: "64Mi"
+memoryLimit: "128Mi"
+cpuRequest: "250m"
+cpuLimit: "500m"
+image:
+  repository: nginx
+  tag: latest
+
+protocol: TCP
+serviceType: LoadBalancer
+pvType: local
+storageClassName: manual
+storageSize: 1Gi
+accessMode: ReadWriteOnce
+replicas: 1
