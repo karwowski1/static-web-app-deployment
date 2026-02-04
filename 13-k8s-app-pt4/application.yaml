@@ -1,0 +1,22 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: nginxapp-argo-application
+  namespace: argocd
+spec:
+  project: default
+
+  source:
+    repoURL: 'https://github.com/karwowski1/static-web-app-deployment.git'
+    targetRevision: HEAD
+    path: static-web-app-deployment/13-k8s-app-pt4
+  destination:
+    server: 'https://kubernetes.default.svc'
+    namespace: nginx-app
+  syncPolicy:
+    syncOptions:
+      - CreateNamespace=true
+    automated:
+      prune: true
+      selfHeal: true
+      
