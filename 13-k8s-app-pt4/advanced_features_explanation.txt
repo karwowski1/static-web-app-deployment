@@ -1,0 +1,4 @@
+• Why Argo CD is beneficial for deploying applications
+• Why mTLS is valuable in Kubernetes clusters
+• When Argo CD should NOT be used and why
+• When mTLS / Service Mesh should NOT be used and why
