@@ -9,7 +9,7 @@ spec:
   source:
     repoURL: 'https://github.com/karwowski1/static-web-app-deployment.git'
     targetRevision: HEAD
-    path: static-web-app-deployment/13-k8s-app-pt4
+    path: 13-k8s-app-pt4
   destination:
     server: 'https://kubernetes.default.svc'
     namespace: nginx-app
