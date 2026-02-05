@@ -1,4 +1,17 @@
 • Why Argo CD is beneficial for deploying applications
+
+Because it automates application deployment and ensures that the cluster state matches the configuration in the code. If it detects differences, it can correct them immediately (self-healing).
+It works as an extension to K8s. GIT (Target State) -> Argo CD (Agent) -> K8s (Actual Live state)
+
 • Why mTLS is valuable in Kubernetes clusters
+
+Mutual encryption of services, not just from one service. This leaves traffic in an “encrypted tunnel.”
+
 • When Argo CD should NOT be used and why
+
+Argo CD works as an extension to K8s. In other cases, such as serverless infrastructure or infrastructure based on virtual machines, Argo CD will not be suitable. 
+Argo CD does not replace tools such as Jenkins or GitHub Actions.
+
 • When mTLS / Service Mesh should NOT be used and why
+
+In projects with simple traffic encryption. Sometimes it is easier to configure TLS directly in the application or use simpler network tools (CNI).
