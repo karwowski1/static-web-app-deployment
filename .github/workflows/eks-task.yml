@@ -1,4 +1,4 @@
-name: "Deploy EKS (Task 16)"
+name: "Deploy EKS"
 
 on:
   push:
