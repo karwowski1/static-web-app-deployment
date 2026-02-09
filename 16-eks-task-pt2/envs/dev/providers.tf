@@ -9,12 +9,12 @@ terraform {
   }
 
   backend "s3" {
-    bucket       = "eks-task2-tf-state"
-    key          = "envs/dev/terraform.tfstate"
-    region       = "eu-central-1"
-    encrypt      = true
-    
-    use_lockfile = true 
+    bucket  = "eks-task2-tf-state"
+    key     = "envs/dev/terraform.tfstate"
+    region  = "eu-central-1"
+    encrypt = true
+
+    use_lockfile = true
   }
 }
 

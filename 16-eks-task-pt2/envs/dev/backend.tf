@@ -38,8 +38,8 @@ resource "aws_iam_policy" "tf_backend_access" {
         Action = [
           "s3:ListBucket",
           "s3:GetObject",
-          "s3:PutObject",    
-          "s3:DeleteObject"  
+          "s3:PutObject",
+          "s3:DeleteObject"
         ],
         Resource = [
           aws_s3_bucket.terraform_state.arn,
@@ -57,8 +57,8 @@ resource "aws_iam_role" "plan_role" {
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
     Statement = [{
-      Action = "sts:AssumeRoleWithWebIdentity"
-      Effect = "Allow"
+      Action    = "sts:AssumeRoleWithWebIdentity"
+      Effect    = "Allow"
       Principal = { Federated = data.aws_iam_openid_connect_provider.github.arn }
       Condition = {
         StringLike = {
@@ -86,8 +86,8 @@ resource "aws_iam_role" "apply_role" {
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
     Statement = [{
-      Action = "sts:AssumeRoleWithWebIdentity"
-      Effect = "Allow"
+      Action    = "sts:AssumeRoleWithWebIdentity"
+      Effect    = "Allow"
       Principal = { Federated = data.aws_iam_openid_connect_provider.github.arn }
       Condition = {
         StringLike = {
