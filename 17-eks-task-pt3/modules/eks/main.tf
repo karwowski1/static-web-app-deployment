@@ -4,9 +4,11 @@ resource "aws_eks_cluster" "main" {
   role_arn = aws_iam_role.eks_cluster_role.arn
   version  = "1.29"
 
-  vpc_config {
-    subnet_ids = var.subnet_ids
-    endpoint_public_access = true
+vpc_config {
+    subnet_ids = var.private_subnet_ids 
+
+    endpoint_private_access = true
+    endpoint_public_access  = false 
   }
 
   depends_on = [
@@ -19,7 +21,7 @@ resource "aws_eks_node_group" "main" {
   cluster_name    = aws_eks_cluster.main.name
   node_group_name = "${var.cluster_name}-node-group"
   node_role_arn   = aws_iam_role.eks_node_role.arn
-  subnet_ids      = var.subnet_ids
+  subnet_ids      = var.private_subnet_ids
 
   scaling_config {
     desired_size = 1

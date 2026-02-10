@@ -8,3 +8,8 @@ output "role_arn_plan" {
 output "role_arn_apply" {
   value = aws_iam_role.apply_role.arn
 }
+
+output "bastion_id" {
+  description = "ID of the Bastion Instance"
+  value       = module.bastion.bastion_instance_id
+}

@@ -22,3 +22,9 @@ variable "github_repo" {
   type        = string
   default     = "karwowski1/static-web-app-deployment"
 }
+
+variable "project_name" {
+  description = "Project name prefix"
+  type        = string
+  default     = "eks-learning"
+}

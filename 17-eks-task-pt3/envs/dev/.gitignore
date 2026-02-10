@@ -6,3 +6,7 @@
 
 *.pem
 .DS_Store
+
+*.tfstate
+*.tfstate.backup
+.terraform/
