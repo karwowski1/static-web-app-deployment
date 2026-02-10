@@ -1,0 +1,21 @@
+name: "Deploy EKS"
+
+on:
+  push:
+    branches: ['**']
+    paths:
+      - '16-eks-task-pt2/envs/dev/**'
+      - '.github/workflows/**'
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  deploy:
+    uses: ./.github/workflows/reusable.yml
+    with:
+      working-directory: "16-eks-task-pt2/envs/dev"
+      aws-region: "eu-central-1"
+      aws-role-plan: "arn:aws:iam::858986858999:role/GitHubActions-Plan-EKS-Native"
+      aws-role-apply: "arn:aws:iam::858986858999:role/GitHubActions-Apply-EKS-Native"
