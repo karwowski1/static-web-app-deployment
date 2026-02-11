@@ -10,7 +10,10 @@ vpc_config {
     endpoint_private_access = true
     endpoint_public_access  = false 
   }
-
+access_config {
+  authentication_mode = "API_AND_CONFIG_MAP"
+  bootstrap_cluster_creator_admin_permissions = true
+}
   depends_on = [
     aws_iam_role_policy_attachment.eks_cluster_policy
   ]
@@ -36,4 +39,45 @@ resource "aws_eks_node_group" "main" {
     aws_iam_role_policy_attachment.eks_cni_policy,
     aws_iam_role_policy_attachment.eks_registry_policy,
   ]
+}
+
+resource "aws_eks_access_entry" "bastion_admin" {
+  cluster_name      = aws_eks_cluster.main.name
+  principal_arn     = var.bastion_role_arn       
+  type              = "STANDARD"
+}
+resource "aws_eks_access_policy_association" "bastion_policy" {
+  cluster_name  = aws_eks_cluster.main.name
+  policy_arn    = "arn:aws:eks::aws:cluster-access-policy/AmazonEKSClusterAdminPolicy"
+  principal_arn = var.bastion_role_arn
+
+  access_scope {
+    type = "cluster"
+  }
+  
+  depends_on = [aws_eks_access_entry.bastion_admin]
+}
+
+# Allow HTTPS access from Bastion to EKS Cluster SG
+resource "aws_security_group_rule" "allow_bastion_https" {
+  type                     = "ingress"
+  from_port                = 443
+  to_port                  = 443
+  protocol                 = "tcp"
+  security_group_id        = aws_eks_cluster.main.vpc_config[0].cluster_security_group_id # Automatyczna SG klastra
+  source_security_group_id = var.bastion_security_group_id
+  description              = "Allow HTTPS from Bastion"
+}
+
+
+
+# Allows HTTP access from Bastion to EKS Cluster SG
+resource "aws_security_group_rule" "allow_bastion_http" {
+  type                     = "ingress"
+  from_port                = 80
+  to_port                  = 80
+  protocol                 = "tcp"
+  security_group_id        = aws_eks_cluster.main.vpc_config[0].cluster_security_group_id
+  source_security_group_id = var.bastion_security_group_id
+  description              = "Allow HTTP from Bastion"
 }

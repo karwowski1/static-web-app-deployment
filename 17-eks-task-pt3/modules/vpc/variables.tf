@@ -23,3 +23,13 @@ variable "cluster_name" {
   type        = string
   default = "my-eks-cluster"
 }
+
+variable "private_subnet_a_cidr" {
+  description = "CIDR block for the private subnet A"
+  type        = string
+}
+variable "private_subnet_b_cidr" {
+  description = "CIDR block for the private subnet B"
+  type        = string
+}
+
