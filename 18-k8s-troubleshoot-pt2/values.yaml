@@ -4,21 +4,23 @@ app:
   name: troubleshooting-app
   image:
     repository: nginx
-    tag: "1.27-alpines"
-  replicas: 0
+    tag: 1.27-alpine
+  replicas: 1
+  mode: production
 
 resources:
   requests:
-    cpu: "4"
-    memory: "8Gi"
+    cpu: 100m
+    memory: 256Mi
   limits:
-    cpu: "4"
-    memory: "8Gi"
+    cpu: 200m
+    memory: 512Mi
 
 nameOverride: ""
 fullnameOverride: ""
 
 networkPolicy:
   enabled: false
+
 
 
