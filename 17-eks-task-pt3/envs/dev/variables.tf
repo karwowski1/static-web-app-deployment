@@ -13,7 +13,7 @@ variable "cluster_name" {
 variable "state_bucket_name" {
   description = "Name of the S3 bucket for Terraform state"
   type        = string
-  default     = "eks-task2-tf-state"
+  default     = "eks-task3-tf-state"
 
 }
 
