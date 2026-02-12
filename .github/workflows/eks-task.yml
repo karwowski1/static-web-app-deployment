@@ -18,5 +18,5 @@ jobs:
     with:
       working-directory: "17-eks-task-pt3/envs/dev"
       aws-region: "eu-central-1"
-      aws-role-plan: "arn:aws:iam::858986858999:role/GitHubActions-Plan-EKS-Native"
-      aws-role-apply: "arn:aws:iam::858986858999:role/GitHubActions-Apply-EKS-Native"
+      aws-role-plan: "arn:aws:iam::858986858999:role/GitHubActions-Plan"
+      aws-role-apply: "arn:aws:iam::858986858999:role/GitHubActions-Apply"
