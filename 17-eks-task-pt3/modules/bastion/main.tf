@@ -61,7 +61,6 @@ resource "aws_instance" "bastion" {
   user_data = <<-EOF
               #!/bin/bash
               yum update -y
-              # Pobranie kubectl (wersja pasująca do EKS 1.29)
               curl -O https://s3.us-west-2.amazonaws.com/amazon-eks/1.29.0/2024-01-04/bin/linux/amd64/kubectl
               chmod +x ./kubectl
               mv ./kubectl /usr/local/bin/kubectl
