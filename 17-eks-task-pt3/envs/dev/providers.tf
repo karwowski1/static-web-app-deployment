@@ -8,14 +8,14 @@ terraform {
     }
   }
 
-  backend "s3" {
-    bucket  = "eks-task3-tf-state"
-    key     = "envs/dev/terraform.tfstate"
-    region  = "eu-central-1"
-    encrypt = true
+  #backend "s3" {
+    #bucket  = "eks-task3-tf-state"
+    #key     = "envs/dev/terraform.tfstate"
+    #region  = "eu-central-1"
+    #encrypt = true
 
-    use_lockfile = true
-  }
+    #use_lockfile = true
+  #}
 }
 
 provider "aws" {
