@@ -4,6 +4,7 @@
 *.tfstate
 *.tfstate.*
 *.tfvars
+.terraform.lock.hcl
 crash.log
 
 # --- Java / Maven ---
