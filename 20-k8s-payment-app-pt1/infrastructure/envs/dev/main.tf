@@ -24,6 +24,40 @@ resource "aws_ecr_repository" "payment_worker" {
   }
 }
 
+resource "aws_ecr_lifecycle_policy" "cleanup_policy_api" {
+  repository = aws_ecr_repository.payment_api.name
+
+  policy = jsonencode({
+    rules = [{
+      rulePriority = 1
+      description  = "Keep last 10 images"
+      selection    = {
+        tagStatus   = "any"
+        countType   = "imageCountMoreThan"
+        countNumber = 10
+      }
+      action = { type = "expire" }
+    }]
+  })
+}
+
+resource "aws_ecr_lifecycle_policy" "cleanup_policy_worker" {
+  repository = aws_ecr_repository.payment_worker.name
+
+  policy = jsonencode({
+    rules = [{
+      rulePriority = 1
+      description  = "Keep last 10 images"
+      selection    = {
+        tagStatus   = "any"
+        countType   = "imageCountMoreThan"
+        countNumber = 10
+      }
+      action = { type = "expire" }
+    }]
+  })
+}
+
 # outputs
 output "api_repo_url" {
   value = aws_ecr_repository.payment_api.repository_url

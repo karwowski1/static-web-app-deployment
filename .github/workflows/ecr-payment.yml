@@ -1,4 +1,4 @@
-name: Deploy ECR
+name: Deploy ECR for Payment App
 
 on:
   push:
