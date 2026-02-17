@@ -1,0 +1,21 @@
+name: Deploy ECR
+
+on:
+  push:
+    branches: [ "**" ]
+    paths:
+      - '20-k8s-payment-app-pt1/infrastructure/envs/dev/**'
+  workflow_dispatch:
+
+permissions:
+  id-token: write 
+  contents: read  
+
+jobs:
+  deploy-ecr:
+    uses: ./.github/workflows/reusable.yml 
+    with:
+      working-directory: "20-k8s-payment-app-pt1/infrastructure/envs/dev"
+      aws-region: "eu-central-1"
+      aws-role-plan: "arn:aws:iam::858986858999:role/GitHubActions-Plan" 
+      aws-role-apply: "arn:aws:iam::858986858999:role/GitHubActions-Apply"

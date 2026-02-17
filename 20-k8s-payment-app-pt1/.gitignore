@@ -1,0 +1,21 @@
+# --- Terraform ---
+.terraform/
+.terraform
+*.tfstate
+*.tfstate.*
+*.tfvars
+.terraform.lock.hcl
+crash.log
+
+# --- Java / Maven ---
+target/
+*.class
+*.jar
+*.war
+*.log
+
+# --- IDE ---
+.idea/
+*.iml
+.vscode/
+.DS_Store
