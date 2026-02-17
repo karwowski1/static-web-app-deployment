@@ -4,9 +4,9 @@ provider "aws" {
 
 # API repo
 resource "aws_ecr_repository" "payment_api" {
-  name                 = "payment-api-prod" 
+  name                 = "payment-api-prod"
   image_tag_mutability = "MUTABLE"
-  force_delete         = true 
+  force_delete         = true
 
   image_scanning_configuration {
     scan_on_push = true
