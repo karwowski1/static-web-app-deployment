@@ -1,0 +1,51 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: payment-api
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: payment-api
+  template:
+    metadata:
+      labels:
+        app: payment-api
+    spec:
+      containers:
+       - name: payment-api
+         image: 858986858999.dkr.ecr.eu-central-1.amazonaws.com/payment-api:v1
+         ports:
+          - containerPort: 8080
+         livenessProbe:
+           httpGet:
+             path: /actuator/health
+             port: 8080
+         env:
+          - name: APP_ENV
+            value: "dev"
+          - name: LOG_LEVEL
+            value: "INFO"
+          - name: SPRING_DATASOURCE_URL
+            value: "jdbc:postgresql://finpay-db.c1ui0yags1ta.eu-central-1.rds.amazonaws.com:5432/payments"
+          - name: SPRING_DATASOURCE_USERNAME
+            value: "payments"  
+          - name: SPRING_DATASOURCE_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: finpay-db-secret
+                key: db-password
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: payment-api-service
+spec:
+  type: LoadBalancer
+  selector:
+    app: payment-api
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 8080
