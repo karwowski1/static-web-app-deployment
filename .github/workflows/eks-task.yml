@@ -6,7 +6,6 @@ on:
     paths:
       - '17-eks-task-pt3/envs/dev/**'
       - '17-eks-task-pt3/modules/**'
-      - '.github/workflows/**'
 
 permissions:
   id-token: write

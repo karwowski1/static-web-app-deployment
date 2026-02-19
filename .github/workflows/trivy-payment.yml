@@ -5,7 +5,6 @@ on:
     branches: [ "**" ]
     paths:
       - '20-k8s-payment-app-pt1/**'
-      - '.github/workflows/**'
       - '!20-k8s-payment-app-pt1/infrastructure/**'
       - '!20-k8s-payment-app-pt1/infrastructure/unused/**'
   workflow_dispatch:
@@ -24,7 +23,7 @@ jobs:
     name: Build & Scan ${{ matrix.app }}
     runs-on: ubuntu-latest
     strategy:
-      fail-fast: false
+      fail-fast: false # If worker fails, continue with the rest of the matrix
       matrix:
         include:
           - app: payment-api
