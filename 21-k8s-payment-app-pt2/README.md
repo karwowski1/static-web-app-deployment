@@ -8,4 +8,4 @@ Below is an AWS cloud architecture design that meets high availability and secur
 
 The diagram below shows the architecture inside the EKS cluster. The design focuses on high availability (HPA), rolling updates, probes, and security (network policies, isolated K8s secrets).
 
-![Kubernetes Architecture](./images/2-k8s-arch.drawio.png)
+![Kubernetes Architecture](./images/02-k8s-arch.drawio.png)
