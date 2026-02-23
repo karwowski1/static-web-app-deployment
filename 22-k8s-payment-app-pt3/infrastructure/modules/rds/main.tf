@@ -1,6 +1,6 @@
 # sg for RDS
 resource "aws_security_group" "rds_sg" {
-  name        = "${var.project_name}-db-sg"
+  name        = "finpay-db-sg-new"
   description = "Allow inbound traffic from VPC"
   vpc_id      = var.vpc_id 
 
@@ -14,7 +14,7 @@ resource "aws_security_group" "rds_sg" {
 
 # subnet group for RDS
 resource "aws_db_subnet_group" "default" {
-  name       = "${var.project_name}-db-subnet-group"
+  name       = "finpay-db-subnet-group-new"
   subnet_ids = var.private_subnet_ids
 
   tags = {
@@ -24,7 +24,7 @@ resource "aws_db_subnet_group" "default" {
 
 # DB instance
 resource "aws_db_instance" "postgres" {
-  identifier             = "${var.project_name}-db"
+  identifier             = "finpay-db-new"
   allocated_storage      = 20
   db_name                = "payments"
   engine                 = "postgres"
