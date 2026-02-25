@@ -1,0 +1,52 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Values.worker.name }}
+  labels:
+    app: {{ .Values.worker.name }}
+spec:
+  replicas: {{ .Values.worker.replicaCount }}
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 25%
+      maxSurge: 25%
+  selector:
+    matchLabels:
+      app: {{ .Values.worker.name }}
+  template:
+    metadata:
+      labels:
+        app: {{ .Values.worker.name }}
+    spec:
+      containers:
+        - name: {{ .Values.worker.name }}
+          image: "{{ .Values.worker.image.repository }}:{{ .Values.worker.image.tag }}"
+          env:
+            - name: JAVA_TOOL_OPTIONS
+              value: "--add-opens=java.base/java.io=ALL-UNNAMED"
+            - name: SPRING_DATASOURCE_URL
+              value: "jdbc:postgresql://finpay-db-new.c1ui0yags1ta.eu-central-1.rds.amazonaws.com:5432/payments"
+            - name: SPRING_DATASOURCE_USERNAME
+              value: "payments"
+          envFrom:
+            - secretRef:
+                name: payment-secret
+          startupProbe:
+            httpGet:
+              path: /actuator/health
+              port: 8090
+            failureThreshold: 30
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /actuator/health
+              port: 8090
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /actuator/health
+              port: 8090
+            periodSeconds: 10
+          resources: # min. CPU and memory requirements for the container
+            {{- toYaml .Values.worker.resources | nindent 12 }}

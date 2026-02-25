@@ -8,3 +8,7 @@
 # .tfvars files (usually contain secrets)
 *.tfvars
 *.tfvars.json
+
+target/
+*.class
+*.jar
