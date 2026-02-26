@@ -7,10 +7,10 @@ metadata:
 spec:
   replicas: {{ .Values.api.replicaCount }}
   strategy:
-    type: RollingUpdate
+    type: {{ .Values.api.updateStrategy.type }}
     rollingUpdate:
-      maxUnavailable: 25%
-      maxSurge: 25%
+      maxUnavailable: {{ .Values.api.updateStrategy.rollingUpdate.maxUnavailable }}
+      maxSurge: {{ .Values.api.updateStrategy.rollingUpdate.maxSurge }}
   selector:
     matchLabels:
       app: {{ .Values.api.name }}
@@ -24,24 +24,31 @@ spec:
           image: "{{ .Values.api.image.repository }}:{{ .Values.api.image.tag }}"
           ports:
             - containerPort: {{ .Values.api.service.port }}
+          env:
+           - name: JAVA_TOOL_OPTIONS
+             value: "--add-opens=java.base/java.io=ALL-UNNAMED"
+           - name: SPRING_DATASOURCE_URL
+             value: "jdbc:postgresql://finpay-db-new.c1ui0yags1ta.eu-central-1.rds.amazonaws.com:5432/payments"
+           - name: SPRING_DATASOURCE_USERNAME
+             value: "payments"  
           envFrom:
             - secretRef:
                 name: payment-secret
           startupProbe:
             httpGet:
-              path: /health/startup
+              path: /actuator/health
               port: {{ .Values.api.service.port }}
-            failureThreshold: 30
-            periodSeconds: 10
+            failureThreshold: {{ .Values.api.startupProbe.failureThreshold }}
+            periodSeconds: {{ .Values.api.startupProbe.periodSeconds }}
           livenessProbe:
             httpGet:
-              path: /health/live 
+              path: /actuator/health 
               port: {{ .Values.api.service.port }}
-            periodSeconds: 10
+            periodSeconds: {{ .Values.api.livenessProbe.periodSeconds }}
           readinessProbe:
             httpGet:
-              path: /health/ready
+              path: /actuator/health
               port: {{ .Values.api.service.port }}
-            periodSeconds: 10
-          resources:
+            periodSeconds: {{ .Values.api.readinessProbe.periodSeconds }}
+          resources: # min. CPU and memory requirements for the container
             {{- toYaml .Values.api.resources | nindent 12 }}
