@@ -1,0 +1,14 @@
+# Network Policy for the worker deployment, denying all ingress traffic to the worker pods, 
+# as they only need to send requests to the API pods, but do not receive any requests from outside.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ .Values.worker.name }}-deny-ingress
+  labels:
+    app: {{ .Values.worker.name }}
+spec:
+  podSelector:
+    matchLabels:
+      app: {{ .Values.worker.name }}
+  policyTypes:
+    - Ingress
