@@ -7,10 +7,10 @@ metadata:
 spec:
   replicas: {{ .Values.api.replicaCount }}
   strategy:
-    type: RollingUpdate
+    type: {{ .Values.api.updateStrategy.type }}
     rollingUpdate:
-      maxUnavailable: 25%
-      maxSurge: 25%
+      maxUnavailable: {{ .Values.api.updateStrategy.rollingUpdate.maxUnavailable }}
+      maxSurge: {{ .Values.api.updateStrategy.rollingUpdate.maxSurge }}
   selector:
     matchLabels:
       app: {{ .Values.api.name }}
@@ -38,17 +38,17 @@ spec:
             httpGet:
               path: /actuator/health
               port: {{ .Values.api.service.port }}
-            failureThreshold: 30
-            periodSeconds: 10
+            failureThreshold: {{ .Values.api.startupProbe.failureThreshold }}
+            periodSeconds: {{ .Values.api.startupProbe.periodSeconds }}
           livenessProbe:
             httpGet:
               path: /actuator/health 
               port: {{ .Values.api.service.port }}
-            periodSeconds: 10
+            periodSeconds: {{ .Values.api.livenessProbe.periodSeconds }}
           readinessProbe:
             httpGet:
               path: /actuator/health
               port: {{ .Values.api.service.port }}
-            periodSeconds: 10
+            periodSeconds: {{ .Values.api.readinessProbe.periodSeconds }}
           resources: # min. CPU and memory requirements for the container
             {{- toYaml .Values.api.resources | nindent 12 }}

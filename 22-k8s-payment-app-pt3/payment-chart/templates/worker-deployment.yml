@@ -7,10 +7,10 @@ metadata:
 spec:
   replicas: {{ .Values.worker.replicaCount }}
   strategy:
-    type: RollingUpdate
+    type: {{ .Values.worker.updateStrategy.type }}
     rollingUpdate:
-      maxUnavailable: 25%
-      maxSurge: 25%
+      maxUnavailable: {{ .Values.worker.updateStrategy.rollingUpdate.maxUnavailable }}
+      maxSurge: {{ .Values.worker.updateStrategy.rollingUpdate.maxSurge }}
   selector:
     matchLabels:
       app: {{ .Values.worker.name }}
@@ -35,18 +35,18 @@ spec:
           startupProbe:
             httpGet:
               path: /actuator/health
-              port: 8090
-            failureThreshold: 30
-            periodSeconds: 10
+              port: {{ .Values.worker.service.port }}
+            failureThreshold: {{ .Values.worker.startupProbe.failureThreshold }}
+            periodSeconds: {{ .Values.worker.startupProbe.periodSeconds }}
           livenessProbe:
             httpGet:
               path: /actuator/health
-              port: 8090
-            periodSeconds: 10
+              port: {{ .Values.worker.service.port }}
+            periodSeconds: {{ .Values.worker.livenessProbe.periodSeconds }}
           readinessProbe:
             httpGet:
               path: /actuator/health
-              port: 8090
-            periodSeconds: 10
+              port: {{ .Values.worker.service.port }}
+            periodSeconds: {{ .Values.worker.readinessProbe.periodSeconds }}
           resources: # min. CPU and memory requirements for the container
             {{- toYaml .Values.worker.resources | nindent 12 }}

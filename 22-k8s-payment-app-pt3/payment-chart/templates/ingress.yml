@@ -11,11 +11,11 @@ spec:
   rules:
     - http:
         paths:
-          - path: /
-            pathType: Prefix
+          - path: {{ .Values.ingress.path }}
+            pathType: {{ .Values.ingress.pathType }}
             backend:
               service:
                 name: {{ .Values.api.name }}-svc
                 port:
-                  number: 8080
+                  number: {{ .Values.ingress.port.number }}
 {{- end -}}
