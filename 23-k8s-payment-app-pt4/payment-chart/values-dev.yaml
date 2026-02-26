@@ -1,0 +1,4 @@
+dbPassword: "SecretPassword123!"
+db:
+  url: "jdbc:postgresql://10.0.3.231:5432/payments"
+  user: "payments"

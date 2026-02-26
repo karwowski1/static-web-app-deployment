@@ -1,0 +1,52 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Values.worker.name }}
+  labels:
+    app: {{ .Values.worker.name }}
+spec:
+  replicas: {{ .Values.worker.replicaCount }}
+  strategy:
+    type: {{ .Values.worker.updateStrategy.type }}
+    rollingUpdate:
+      maxUnavailable: {{ .Values.worker.updateStrategy.rollingUpdate.maxUnavailable }}
+      maxSurge: {{ .Values.worker.updateStrategy.rollingUpdate.maxSurge }}
+  selector:
+    matchLabels:
+      app: {{ .Values.worker.name }}
+  template:
+    metadata:
+      labels:
+        app: {{ .Values.worker.name }}
+    spec:
+      containers:
+        - name: {{ .Values.worker.name }}
+          image: "{{ .Values.worker.image.repository }}:{{ .Values.worker.image.tag }}"
+          env:
+            - name: JAVA_TOOL_OPTIONS
+              value: "--add-opens=java.base/java.io=ALL-UNNAMED"
+            - name: SPRING_DATASOURCE_URL
+              value: {{ .Values.db.url }}
+            - name: SPRING_DATASOURCE_USERNAME
+              value: {{ .Values.db.user }}
+          envFrom:
+            - secretRef:
+                name: payment-secret
+          startupProbe:
+            httpGet:
+              path: /actuator/health
+              port: {{ .Values.worker.service.port }}
+            failureThreshold: {{ .Values.worker.startupProbe.failureThreshold }}
+            periodSeconds: {{ .Values.worker.startupProbe.periodSeconds }}
+          livenessProbe:
+            httpGet:
+              path: /actuator/health
+              port: {{ .Values.worker.service.port }}
+            periodSeconds: {{ .Values.worker.livenessProbe.periodSeconds }}
+          readinessProbe:
+            httpGet:
+              path: /actuator/health
+              port: {{ .Values.worker.service.port }}
+            periodSeconds: {{ .Values.worker.readinessProbe.periodSeconds }}
+          resources: # min. CPU and memory requirements for the container
+            {{- toYaml .Values.worker.resources | nindent 12 }}
