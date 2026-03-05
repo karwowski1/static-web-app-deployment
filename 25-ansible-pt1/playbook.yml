@@ -1,0 +1,18 @@
+---
+- hosts: all
+  become: true
+  #   tasks:
+  #     - name: Update apt cache
+  #       ansible.builtin.apt:
+  #         update_cache: yes
+  #     - name: Install nginx
+  #       ansible.builtin.apt:
+  #         name: nginx
+  #         state: present
+  #     - name: Start nginx
+  #       ansible.builtin.service:
+  #         name: nginx
+  #         state: started
+  #         enabled: yes
+  roles:
+    - roles/nginx_app

@@ -62,10 +62,11 @@ ingress:
   name: payment-ingress
   enabled: true 
   className: "alb"
-  path: /*
+  path: /
   pathType: Prefix
   port: 
-    number: 80
+    number: 8080
   annotations:
     alb.ingress.kubernetes.io/scheme: internet-facing
     alb.ingress.kubernetes.io/target-type: ip
+    alb.ingress.kubernetes.io/healthcheck-path: /actuator/health

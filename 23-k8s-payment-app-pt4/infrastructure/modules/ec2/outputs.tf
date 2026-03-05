@@ -1,4 +1,4 @@
 output "vm_private_ip" {
-  description = "Prywatny adres IP naszej nowej bazy danych"
+  description = "The private IP address of the PostgreSQL VM instance."
   value       = aws_instance.postgres_vm.private_ip
 }
