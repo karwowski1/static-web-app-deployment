@@ -1,0 +1,93 @@
+---
+# tasks file for roles/nginx-app
+- name: Update apt cache
+  ansible.builtin.apt:
+    update_cache: yes
+  tags: [install]
+
+- name: Install nginx
+  ansible.builtin.apt:
+    name: "{{ nginx_package_name }}"
+    state: present
+  tags: [install]
+
+- name: Create system user www
+  ansible.builtin.user:
+    name: www
+    state: present
+  tags: [config]
+
+- name: Setup and own web root
+  ansible.builtin.file:
+    path: "{{ nginx_root }}"
+    state: directory
+  tags: [config]
+
+- name: Deploy nginx conf
+  ansible.builtin.template:
+    src: nginx.conf.j2
+    dest: /etc/nginx/nginx.conf
+  notify: Restart service nginx
+  tags: [config]
+
+- name: Versioned nginx index.html
+  ansible.builtin.template:
+    src: templates/index.html.j2
+    dest: "{{ nginx_root }}/index.html"
+    owner: www
+    group: www
+    mode: "0644"
+  notify: Restart service nginx
+  tags: [deploy]
+
+- name: Start nginx
+  ansible.builtin.service:
+    name: "{{ nginx_service_name }}"
+    state: started
+    enabled: yes
+  tags: [run]
+
+# creates directories for replicas if replica_count > 1
+- name: Create web root for replica
+  ansible.builtin.file:
+    path: "{{ nginx_root }}/replica-{{ item + 1 }}"
+    state: directory
+    owner: www
+    group: www
+    mode: "0755"
+  loop: "{{ range(replica_count | int) | list }}"
+  when: replica_count | int > 1
+  tags: [config]
+
+# deploys index.html for replicas if replica_count > 1
+- name: Deploy index.html for replica
+  ansible.builtin.template:
+    src: index.html.j2
+    dest: "{{ nginx_root }}/replica-{{ item + 1 }}/index.html"
+    owner: www
+    group: www
+    mode: "0644"
+  loop: "{{ range(replica_count | int) | list }}"
+  when: replica_count | int > 1
+  tags: [deploy]
+
+# summary
+- name: Autoscale summary
+  ansible.builtin.debug:
+    msg: "Replica {{ item + 1 }} → port {{ nginx_listen_port + item }}"
+  loop: "{{ range(replica_count | int) | list }}"
+  tags: [run]
+
+# ------------ Health check and Assertion ------------
+- name: Health Check - is nginx running?
+  ansible.builtin.service_facts:
+  tags: [health]
+
+- name: Assert nginx is running
+  ansible.builtin.assert:
+    that:
+      - ansible_facts.services[nginx_service_name] is defined
+      - ansible_facts.services[nginx_service_name].state == "running"
+    fail_msg: "nginx is not running"
+    success_msg: "nginx is running"
+  tags: [health]
