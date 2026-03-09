@@ -1,0 +1,11 @@
+---
+# defaults file for roles/nginx-app
+nginx_package_name: nginx=1.24.0-2ubuntu7.6
+nginx_service_name: nginx
+nginx_root: /var/www/html
+nginx_listen_port: 80
+nginx_server_name: localhost
+nginx_access_log: /var/log/nginx/access.log
+nginx_error_log: /var/log/nginx/error.log
+release_version: "{{ ansible_date_time.epoch }}"
+replica_count: 3
