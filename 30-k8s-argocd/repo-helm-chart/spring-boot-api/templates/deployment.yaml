@@ -21,7 +21,7 @@ spec:
         - name: {{ .Chart.Name }}
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
           args:
-            - "--spring.profiles.active={{ .Values.springProfile }}"
+            - "--spring.profiles.active={{ .Values.env }}"
           env:
             - name: POD_IP
               valueFrom:
