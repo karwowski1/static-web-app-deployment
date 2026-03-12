@@ -1,13 +1,13 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: { { include "spring-boot-api.fullname" . } }
+  name: {{ include "spring-boot-api.fullname" . }}
   labels:
-    app: { { include "spring-boot-api.name" . } }
+    app: {{ include "spring-boot-api.name" . }}
 spec:
   type: ClusterIP
   selector:
-    app: { { include "spring-boot-api.name" . } }
+    app: {{ include "spring-boot-api.name" . }}
   ports:
     - name: api
       port: 8080
