@@ -1,0 +1,9 @@
+replicaCount: 5
+springProfile: prd
+image:
+  repository: busybox
+  tag: stable
+  pullPolicy: IfNotPresent
+ingress:
+  enabled: true
+  host: api.prd.task.local
