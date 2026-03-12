@@ -17,7 +17,7 @@ spec:
     spec:
       project: default
       destination:
-        name: "{{clusterName}}"
+        server: https://kubernetes.default.svc
         namespace: spring-boot-api-{{env}}
       syncPolicy:
         automated:
