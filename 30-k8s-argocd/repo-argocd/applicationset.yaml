@@ -1,0 +1,37 @@
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: spring-boot-api-appset
+  namespace: argocd
+spec:
+  generators:
+    - list:
+        elements:
+          - env: dev
+            clusterName: dev-global-cluster-0
+          - env: prd
+            clusterName: prd-global-cluster-5
+  template:
+    metadata:
+      name: spring-boot-api-{{env}}
+    spec:
+      project: default
+      destination:
+        name: "{{clusterName}}"
+        namespace: spring-boot-api-{{env}}
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true
+        syncOptions:
+          - CreateNamespace=true
+      sources:
+        - repoURL: "https://github.com/karwowski1/static-web-app-deployment.git"
+          targetRevision: HEAD
+          path: 30-k8s-argocd/repo-helm-chart/spring-boot-api
+          helm:
+            valueFiles:
+              - $values/30-k8s-argocd/repo-helm-values/{{env}}/values.yaml
+        - repoURL: "https://github.com/karwowski1/static-web-app-deployment.git"
+          targetRevision: HEAD
+          ref: values

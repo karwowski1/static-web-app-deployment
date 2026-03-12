@@ -1,0 +1,78 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "spring-boot-api.fullname" . }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  strategy:
+    type: RollingUpdate
+  selector:
+    matchLabels:
+      app: {{ include "spring-boot-api.name" . }}
+  template:
+    metadata:
+      annotations:
+        configChecksum: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
+        secretChecksum: {{ include (print $.Template.BasePath "/secret.yaml") . | sha256sum }}
+      labels:
+        app: {{ include "spring-boot-api.name" . }}
+    spec:
+      containers:
+        - name: {{ .Chart.Name }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          args:
+            - "--spring.profiles.active={{ .Values.springProfile }}"
+          env:
+            - name: POD_IP
+              valueFrom:
+                fieldRef:
+                  fieldPath: status.podIP
+            - name: APP_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: '{{ include "spring-boot-api.fullname" . }}-secret'
+                  key: password
+            - name: APP_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: '{{ include "spring-boot-api.fullname" . }}-secret'
+                  key: username
+          ports:
+            - name: api
+              containerPort: 8080
+              protocol: TCP
+            - name: logs
+              containerPort: 8081
+              protocol: TCP
+            - name: soap
+              containerPort: 8082
+              protocol: TCP
+          lifecycle:
+            preStop:
+              exec:
+                command: ["sh", "-c", "wget http://localhost:8080/service/shutdown"]
+          startupProbe:
+            tcpSocket:
+              port: 8080
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          readinessProbe:
+            tcpSocket:
+              port: 8080
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          livenessProbe:
+            tcpSocket:
+              port: 8080
+            initialDelaySeconds: 30
+            periodSeconds: 30
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+          volumeMounts:
+            - name: config-volume
+              mountPath: /app
+      volumes:
+        - name: config-volume
+          configMap:
+            name: '{{ include "spring-boot-api.fullname" . }}-config'
+            

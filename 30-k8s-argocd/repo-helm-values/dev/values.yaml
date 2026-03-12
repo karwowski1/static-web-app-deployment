@@ -1,0 +1,9 @@
+replicaCount: 3
+springProfile: dev
+image:
+  repository: busybox
+  tag: stable
+  pullPolicy: IfNotPresent
+ingress:
+  enabled: true
+  host: api.dev.task.local
