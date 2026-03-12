@@ -1,32 +1,32 @@
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: {{ include "spring-boot-api.fullname" . }}
+  name: '{{ include "spring-boot-api.fullname" . }}'
   labels:
-    app: {{ include "spring-boot-api.name" . }}
+    app: '{{ include "spring-boot-api.name" . }}'
 spec:
   rules:
-    - host: {{ .Values.ingress.host }}
+    - host: '{{ .Values.ingress.host }}'
       http:
         paths:
           - path: /api
             pathType: Prefix
             backend:
               service:
-                name: {{ include "spring-boot-api.fullname" . }}
+                name: '{{ include "spring-boot-api.fullname" . }}'
                 port:
                   number: 8080
           - path: /logs
             pathType: Prefix
             backend:
               service:
-                name: {{ include "spring-boot-api.fullname" . }}
+                name: '{{ include "spring-boot-api.fullname" . }}'
                 port:
                   number: 8081
           - path: /soap
             pathType: Prefix
             backend:
               service:
-                name: {{ include "spring-boot-api.fullname" . }}
+                name: '{{ include "spring-boot-api.fullname" . }}'
                 port:
                   number: 8082
