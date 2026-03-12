@@ -1,0 +1,22 @@
+groups:
+  - name: example-app-alerts
+    rules:
+      - alert: HighErrorRate
+        expr: |
+          sum(rate(http_requests_total{job="example-app", code=~"4..|5.."}[1m]))
+          /
+          sum(rate(http_requests_total{job="example-app"}[1m])) * 100 > 5
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High error rate on example-app"
+          description: "Error rate is {{ $value | printf \"%.2f\" }}%"
+
+      - alert: AppDown
+        expr: up{job="example-app"} == 0
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "example-app is DOWN"
