@@ -31,6 +31,3 @@ Following best practices, the system was manually validated:
 * **Manual Log Injection**: Used the terminal to add a test "ERROR" entry to the logs.
 * **Metric Verification**: Simulated traffic to verify the successful collection of custom HTTP request data in CloudWatch Metrics.
 * **Alarm Confirmation**: Verified that the CloudWatch Alarm transitioned to the `ALARM` state and triggered the SNS email notification.
-
----
-*Note: This documentation is based on the DevOps/Cloud monitoring task requirements.*
