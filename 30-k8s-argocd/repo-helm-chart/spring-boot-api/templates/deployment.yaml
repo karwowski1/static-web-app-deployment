@@ -21,7 +21,7 @@ spec:
         - name: {{ .Chart.Name }}
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
           args:
-            - "--spring.profiles.active={{ .Values.env }}"
+            - "--spring.profiles.active={{ .Values.springProfile }}"
           env:
             - name: POD_IP
               valueFrom:
@@ -30,12 +30,12 @@ spec:
             - name: APP_PASSWORD
               valueFrom:
                 secretKeyRef:
-                  name: '{{ include "spring-boot-api.fullname" . }}-secret'
+                  name: '{{ include "spring-boot-api.fullname" . }}-secretp'
                   key: password
             - name: APP_USERNAME
               valueFrom:
                 secretKeyRef:
-                  name: '{{ include "spring-boot-api.fullname" . }}-secret'
+                  name: '{{ include "spring-boot-api.fullname" . }}-secretu'
                   key: username
           ports:
             - name: api
