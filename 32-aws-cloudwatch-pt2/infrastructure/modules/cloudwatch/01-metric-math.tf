@@ -12,7 +12,7 @@ resource "aws_cloudwatch_metric_alarm" "system_stress_alarm" {
   comparison_operator = "GreaterThanOrEqualToThreshold"
   evaluation_periods  = 1
   threshold           = 3
-  alarm_description   = "Advanced correlation alarm for ${each.key}. Triggers if >= 3 stress conditions are met."
+  alarm_description   = "Advanced alarm for ${each.key}. Triggers if equal to or more than 3 stress conditions are met."
 
   metric_query {
     id          = "e1"
