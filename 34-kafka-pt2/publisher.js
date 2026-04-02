@@ -19,7 +19,7 @@ const run = async () => {
     source_service: 'publisher-service',
     timestamp: new Date().toISOString(),
     payload: {
-      order_id: 'A-10006',
+      order_id: 'A-10002',
       customer_id: 'C-42',
       amount: 199.90,
       currency: 'PLN'
