@@ -1,6 +1,10 @@
 pipeline {
     agent any
 
+    tools {
+        nodejs 'node20'
+    }
+
     options {
         disableConcurrentBuilds()
         timestamps()
@@ -22,7 +26,9 @@ pipeline {
 
         stage('Install Dependencies') {
             steps {
-                sh 'npm install'
+                dir('37-jenkins-pt1') {
+                    sh 'npm install'
+                }
             }
         }
 
@@ -31,7 +37,9 @@ pipeline {
                 expression { return params.RUN_TESTS }
             }
             steps {
-                sh 'npm test'
+                dir('37-jenkins-pt1') {
+                    sh 'npm test'
+                }
             }
         }
     }
@@ -45,7 +53,7 @@ pipeline {
         }
         always {
             echo "Check logs"
-            archiveArtifacts artifacts: 'package.json'
+            archiveArtifacts artifacts: '37-jenkins-pt1/package.json'
         }
     }
 }
