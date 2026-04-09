@@ -1,0 +1,51 @@
+pipeline {
+    agent any
+
+    options {
+        disableConcurrentBuilds()
+        timestamps()
+    }
+
+    parameters {
+        choice(name: 'ENV', choices: ['dev', 'test'], description: 'Target environment')
+        booleanParam(name: 'RUN_TESTS', defaultValue: true, description: 'Execute automated tests?')
+        string(name: 'BUILD_VERSION', defaultValue: '1.0.0', description: 'Version of the build')
+    }
+
+    stages {
+        stage('Checkout') {
+            steps {
+                checkout scm
+                echo "Building version: ${params.BUILD_VERSION}"
+            }
+        }
+
+        stage('Install Dependencies') {
+            steps {
+                sh 'npm install'
+            }
+        }
+
+        stage('Run Tests') {
+            when {
+                expression { return params.RUN_TESTS }
+            }
+            steps {
+                sh 'npm test'
+            }
+        }
+    }
+
+    post {
+        success {
+            echo "Build completed successfully"
+        }
+        failure {
+            echo "Build failed"
+        }
+        always {
+            echo "Check logs"
+            archiveArtifacts artifacts: 'package.json'
+        }
+    }
+}
