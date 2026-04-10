@@ -46,7 +46,7 @@ pipeline {
             steps {
                 sh 'docker run -d -p 3000:3000 --name task-api-container task-api:local'
                 sleep 15
-                sh 'curl -f http://localhost:3000/health || exit 1'
+                sh 'curl -f http://host.docker.internal:3000/health || exit 1'
             }
         }
 
