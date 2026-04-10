@@ -1,0 +1,78 @@
+pipeline {
+    agent {
+        label 'ci'
+    }
+
+    options {
+        disableConcurrentBuilds()
+        timestamps()
+    }
+
+    parameters {
+        choice(name: 'ENV', choices: ['dev', 'test'], description: 'Target environment')
+        booleanParam(name: 'RUN_TESTS', defaultValue: true, description: 'Execute automated tests?')
+        string(name: 'BUILD_VERSION', defaultValue: '1.0.0', description: 'Version of the build')
+    }
+
+    stages {
+        stage('Checkout') {
+            steps {
+                checkout scm
+                echo "Building version: ${params.BUILD_VERSION}"
+            }
+        }
+
+        stage('Install Dependencies & Test') {
+            when {
+                expression { return params.RUN_TESTS }
+            }
+            steps {
+                dir('38-jenkins-part2') {
+                    sh 'npm install'
+                    sh 'npm test'
+                }
+            }
+        }
+
+        stage('Docker Build') {
+            steps {
+                dir('38-jenkins-part2') {
+                    sh 'docker build -t task-api:local .'
+                }
+            }
+        }
+
+        stage('Docker Run & Verify') {
+            steps {
+                sh 'docker run -d -p 3000:3000 --name task-api-container task-api:local'
+                sleep 15
+                sh 'curl -f http://localhost:3000/health || exit 1'
+            }
+        }
+
+        stage('Use Credentials') {
+            steps {
+                withCredentials([string(credentialsId: 'API_SECRET_TOKEN', variable: 'SECRET')]) {
+                    sh 'echo "Bezpiecznie pobrano token. Ukryta wartosc to: $SECRET"'
+                }
+            }
+        }
+    }
+
+    post {
+        success {
+            echo "Build completed successfully"
+        }
+        failure {
+            echo "Build failed - check logs"
+        }
+        always {
+            echo "Cleanup and archiving..."
+            sh 'docker stop task-api-container || true'
+            sh 'docker rm task-api-container || true'
+            dir('38-jenkins-part2') {
+                archiveArtifacts artifacts: 'package.json', allowEmptyArchive: true
+            }
+        }
+    }
+}
