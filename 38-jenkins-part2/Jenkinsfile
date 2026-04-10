@@ -53,7 +53,7 @@ pipeline {
         stage('Use Credentials') {
             steps {
                 withCredentials([string(credentialsId: 'API_SECRET_TOKEN', variable: 'SECRET')]) {
-                    sh 'echo "Bezpiecznie pobrano token. Ukryta wartosc to: $SECRET"'
+                    sh 'echo "Secret Value: $SECRET"'
                 }
             }
         }
