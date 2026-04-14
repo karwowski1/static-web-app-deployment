@@ -1,0 +1,80 @@
+pipeline {
+    agent { label 'ci' }
+
+    environment {
+        AWS_REGION     = "eu-central-1"
+        ECR_REGISTRY   = "ACCOUNT_ID.dkr.ecr.eu-central-1.amazonaws.com"
+        APP_NAME       = "task-api"
+        DEV_SERVICE    = "dev-task-api-service"
+        PROD_SERVICE   = "prod-task-api-service"
+        CLUSTER_NAME   = "dev-cluster"
+    }
+
+    parameters {
+        choice(name: 'ENV', choices: ['dev', 'prod'], description: 'Target environment')
+        string(name: 'VERSION', defaultValue: '1.0.0', description: 'Build version')
+    }
+
+    stages {
+        stage('Checkout') {
+            steps {
+                checkout scm
+            }
+        }
+
+        stage('Security Scan & Test') {
+            steps {
+                dir('app') {
+                    sh 'npm install'
+                    sh 'npm test'
+                }
+            }
+        }
+
+        stage('Docker Build & Push') {
+            steps {
+                script {
+                    def imageTag = "${ECR_REGISTRY}/${parameters.ENV}-${APP_NAME}:${parameters.VERSION}-${BUILD_NUMBER}"
+                    dir('app') {
+                        sh "aws ecr get-login-password --region ${AWS_REGION} | docker login --username AWS --password-stdin ${ECR_REGISTRY}"
+                        sh "docker build -t ${imageTag} ."
+                        sh "docker push ${imageTag}"
+                    }
+                }
+            }
+        }
+
+        stage('Deploy to Dev') {
+            when { expression { return parameters.ENV == 'dev' } }
+            steps {
+                sh "aws ecs update-service --cluster ${CLUSTER_NAME} --service ${DEV_SERVICE} --force-new-deployment"
+            }
+        }
+
+        stage('Manual Approval for Prod') {
+            when { expression { return parameters.ENV == 'prod' } }
+            steps {
+                input message: "Deploy version ${parameters.VERSION} to Production?", ok: "Approve"
+            }
+        }
+
+        stage('Deploy to Prod') {
+            when { expression { return parameters.ENV == 'prod' } }
+            steps {
+                sh "aws ecs update-service --cluster prod-cluster --service ${PROD_SERVICE} --force-new-deployment"
+            }
+        }
+    }
+
+    post {
+        always {
+            sh 'docker logout ${ECR_REGISTRY} || true'
+        }
+        success {
+            echo "Deployment to ${parameters.ENV} finished successfully."
+        }
+        failure {
+            echo "Deployment failed. Check CloudWatch logs."
+        }
+    }
+}
