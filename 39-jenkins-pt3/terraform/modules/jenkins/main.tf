@@ -57,7 +57,7 @@ resource "aws_instance" "jenkins" {
               sudo curl -sL -o /etc/yum.repos.d/jenkins.repo https://pkg.jenkins.io/redhat-stable/jenkins.repo
               sudo rpm --import https://pkg.jenkins.io/redhat-stable/jenkins.io-2023.key
               sudo yum upgrade -y
-              sudo dnf install java-17-amazon-corretto -y
+              sudo dnf install java-21-amazon-corretto -y
               sudo yum install jenkins -y --nogpgcheck
               sudo systemctl enable --now jenkins
               EOF

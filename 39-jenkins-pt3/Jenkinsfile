@@ -1,80 +1,65 @@
 pipeline {
-    agent { label 'ci' }
+    agent any
 
     environment {
-        AWS_REGION     = "eu-central-1"
-        ECR_REGISTRY   = "ACCOUNT_ID.dkr.ecr.eu-central-1.amazonaws.com"
-        APP_NAME       = "task-api"
-        DEV_SERVICE    = "dev-task-api-service"
-        PROD_SERVICE   = "prod-task-api-service"
-        CLUSTER_NAME   = "dev-cluster"
-    }
-
-    parameters {
-        choice(name: 'ENV', choices: ['dev', 'prod'], description: 'Target environment')
-        string(name: 'VERSION', defaultValue: '1.0.0', description: 'Build version')
+        AWS_REGION     = 'eu-central-1'
+        ECR_REGISTRY   = '858986858999.dkr.ecr.eu-central-1.amazonaws.com'
+        ECR_REPOSITORY = 'dev-task-api'
+        ECS_CLUSTER    = 'dev-cluster'
+        ECS_SERVICE    = 'dev-task-api-service'
+        APP_DIR        = '39-jenkins-pt3/app'
     }
 
     stages {
-        stage('Checkout') {
-            steps {
-                checkout scm
-            }
-        }
-
-        stage('Security Scan & Test') {
-            steps {
-                dir('app') {
-                    sh 'npm install'
-                    sh 'npm test'
-                }
-            }
-        }
-
-        stage('Docker Build & Push') {
+        stage('Build Docker Image') {
             steps {
                 script {
-                    def imageTag = "${ECR_REGISTRY}/${parameters.ENV}-${APP_NAME}:${parameters.VERSION}-${BUILD_NUMBER}"
-                    dir('app') {
-                        sh "aws ecr get-login-password --region ${AWS_REGION} | docker login --username AWS --password-stdin ${ECR_REGISTRY}"
-                        sh "docker build -t ${imageTag} ."
-                        sh "docker push ${imageTag}"
+                    dir("${APP_DIR}") {
+                        echo "Building image with tag ${BUILD_NUMBER}..."
+                        dockerImage = docker.build("${ECR_REGISTRY}/${ECR_REPOSITORY}:${BUILD_NUMBER}")
                     }
                 }
             }
         }
 
-        stage('Deploy to Dev') {
-            when { expression { return parameters.ENV == 'dev' } }
+        stage('Push to ECR') {
             steps {
-                sh "aws ecs update-service --cluster ${CLUSTER_NAME} --service ${DEV_SERVICE} --force-new-deployment"
+                script {
+                    echo "Pushing image to AWS ECR..."
+                    docker.withRegistry("https://${ECR_REGISTRY}", "ecr:${AWS_REGION}:aws-credentials") {
+                        dockerImage.push()
+                        dockerImage.push('latest')
+                    }
+                }
             }
         }
 
-        stage('Manual Approval for Prod') {
-            when { expression { return parameters.ENV == 'prod' } }
+        stage('Deploy to ECS Fargate') {
             steps {
-                input message: "Deploy version ${parameters.VERSION} to Production?", ok: "Approve"
-            }
-        }
-
-        stage('Deploy to Prod') {
-            when { expression { return parameters.ENV == 'prod' } }
-            steps {
-                sh "aws ecs update-service --cluster prod-cluster --service ${PROD_SERVICE} --force-new-deployment"
+                script {
+                    echo "Updating ECS service..."
+                    sh """
+                    aws ecs update-service \
+                        --cluster ${ECS_CLUSTER} \
+                        --service ${ECS_SERVICE} \
+                        --force-new-deployment \
+                        --region ${AWS_REGION}
+                    """
+                }
             }
         }
     }
-
+    
     post {
         always {
-            sh 'docker logout ${ECR_REGISTRY} || true'
+            echo "Cleaning up local images..."
+            sh "docker rmi ${ECR_REGISTRY}/${ECR_REPOSITORY}:${BUILD_NUMBER} || true"
         }
         success {
-            echo "Deployment to ${parameters.ENV} finished successfully."
+            echo "Success! New application version deployed."
         }
         failure {
-            echo "Deployment failed. Check CloudWatch logs."
+            echo "Deployment failed. Check the logs."
         }
     }
 }
