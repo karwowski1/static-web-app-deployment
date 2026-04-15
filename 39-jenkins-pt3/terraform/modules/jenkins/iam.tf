@@ -24,3 +24,8 @@ resource "aws_iam_instance_profile" "jenkins_profile" {
   name = "${var.environment}-jenkins-profile"
   role = aws_iam_role.jenkins_role.name
 }
+resource "aws_iam_role_policy_attachment" "jenkins_ecr_poweruser" {
+  role = aws_iam_role.jenkins_role.name
+
+  policy_arn = "arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryPowerUser"
+}
