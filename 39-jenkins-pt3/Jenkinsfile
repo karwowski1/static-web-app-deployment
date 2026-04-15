@@ -21,15 +21,15 @@ pipeline {
                 }
             }
         }
-
         stage('Push to ECR') {
             steps {
                 script {
+                    echo "Logging into AWS ECR using IAM Role..."
+                    sh "aws ecr get-login-password --region ${AWS_REGION} | docker login --username AWS --password-stdin ${ECR_REGISTRY}"
+                    
                     echo "Pushing image to AWS ECR..."
-                    docker.withRegistry("https://${ECR_REGISTRY}", "ecr:${AWS_REGION}:aws-credentials") {
-                        dockerImage.push()
-                        dockerImage.push('latest')
-                    }
+                    dockerImage.push()
+                    dockerImage.push('latest')
                 }
             }
         }
