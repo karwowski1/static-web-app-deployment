@@ -6,6 +6,8 @@ module "vpc" {
   azs                  = ["eu-central-1a", "eu-central-1b"]
   public_subnet_cidrs  = ["10.0.1.0/24", "10.0.2.0/24"]
   private_subnet_cidrs = ["10.0.11.0/24", "10.0.12.0/24"]
+  vpc_endpoints        = ["s3", "ecr_api"]
+  aws_region           = "eu-central-1"
 }
 
 module "jenkins" {
@@ -17,10 +19,9 @@ module "jenkins" {
 }
 
 module "app_cluster" {
-  source            = "../../modules/app_cluster"
-  environment       = "dev"
-  vpc_id            = module.vpc.vpc_id
-  public_subnets    = module.vpc.public_subnet_ids
-  private_subnets   = module.vpc.private_subnet_ids
-  security_group_id = module.jenkins.jenkins_sg_id
+  source          = "../../modules/app_cluster"
+  environment     = "dev"
+  vpc_id          = module.vpc.vpc_id
+  public_subnets  = module.vpc.public_subnet_ids
+  private_subnets = module.vpc.private_subnet_ids
 }

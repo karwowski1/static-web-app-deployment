@@ -35,6 +35,8 @@ resource "aws_ecs_service" "app_service" {
   launch_type     = "FARGATE"
   desired_count   = 1
 
+  depends_on = [aws_lb_listener.http]
+
   load_balancer {
     target_group_arn = aws_lb_target_group.app_tg.arn
     container_name   = "task-api"
@@ -43,7 +45,7 @@ resource "aws_ecs_service" "app_service" {
 
   network_configuration {
     subnets          = var.private_subnets
-    security_groups  = [var.security_group_id]
+    security_groups  = [aws_security_group.ecs_tasks_sg.id]
     assign_public_ip = false
   }
 }

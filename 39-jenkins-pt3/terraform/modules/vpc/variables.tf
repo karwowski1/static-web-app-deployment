@@ -22,7 +22,8 @@ variable "aws_region" {
   type = string
 
 }
-variable "endpoint_sg_id" {
-  description = "ID of the security group for VPC endpoints"
-  type        = string
+variable "vpc_endpoints" {
+  type = list(string)
 }
+
+
