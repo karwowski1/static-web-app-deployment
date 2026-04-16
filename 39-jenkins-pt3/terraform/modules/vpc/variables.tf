@@ -17,3 +17,12 @@ variable "private_subnet_cidrs" {
 variable "azs" {
   type = list(string)
 }
+
+variable "aws_region" {
+  type = string
+
+}
+variable "endpoint_sg_id" {
+  description = "ID of the security group for VPC endpoints"
+  type        = string
+}

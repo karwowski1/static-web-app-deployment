@@ -1,46 +1,55 @@
 pipeline {
     agent any
 
+    parameters {
+        choice(name: 'ENVIRONMENT', choices: ['dev', 'prod'], description: 'Target environment')
+    }
+
     environment {
         AWS_REGION     = 'eu-central-1'
         ECR_REGISTRY   = '858986858999.dkr.ecr.eu-central-1.amazonaws.com'
-        ECR_REPOSITORY = 'dev-task-api'
-        ECS_CLUSTER    = 'dev-cluster'
-        ECS_SERVICE    = 'dev-task-api-service'
         APP_DIR        = '39-jenkins-pt3/app'
+        
+        DEPLOY_ENV     = "${params.ENVIRONMENT}"
+        ECR_REPOSITORY = "${params.ENVIRONMENT}-task-api"
+        ECS_CLUSTER    = "${params.ENVIRONMENT}-cluster"
+        ECS_SERVICE    = "${params.ENVIRONMENT}-task-api-service"
     }
 
     stages {
-        stage('Build Docker Image') {
+        stage('Build Image') {
             steps {
                 script {
                     dir("${APP_DIR}") {
-                        echo "Building image with tag ${BUILD_NUMBER}..."
                         dockerImage = docker.build("${ECR_REGISTRY}/${ECR_REPOSITORY}:${BUILD_NUMBER}")
                     }
                 }
             }
         }
+
         stage('Push to ECR') {
             steps {
                 script {
-                    echo "Logging into AWS ECR using IAM Role..."
                     sh "aws ecr get-login-password --region ${AWS_REGION} | docker login --username AWS --password-stdin ${ECR_REGISTRY}"
-                    
-                    echo "Pushing image to AWS ECR..."
                     sh "docker push ${ECR_REGISTRY}/${ECR_REPOSITORY}:${BUILD_NUMBER}"
-                    
-                    echo "Tagging and pushing latest..."
                     sh "docker tag ${ECR_REGISTRY}/${ECR_REPOSITORY}:${BUILD_NUMBER} ${ECR_REGISTRY}/${ECR_REPOSITORY}:latest"
                     sh "docker push ${ECR_REGISTRY}/${ECR_REPOSITORY}:latest"
                 }
             }
         }
 
-        stage('Deploy to ECS Fargate') {
+        stage('Approval') {
+            when {
+                expression { DEPLOY_ENV == 'prod' }
+            }
+            steps {
+                input message: "Deploy version ${BUILD_NUMBER} to PRODUCTION?", ok: "Deploy"
+            }
+        }
+
+        stage('Deploy to ECS') {
             steps {
                 script {
-                    echo "Updating ECS service..."
                     sh """
                     aws ecs update-service \
                         --cluster ${ECS_CLUSTER} \
@@ -52,17 +61,11 @@ pipeline {
             }
         }
     }
-    
+
     post {
         always {
-            echo "Cleaning up local images..."
             sh "docker rmi ${ECR_REGISTRY}/${ECR_REPOSITORY}:${BUILD_NUMBER} || true"
-        }
-        success {
-            echo "Success! New application version deployed."
-        }
-        failure {
-            echo "Deployment failed. Check the logs."
+            sh "docker rmi ${ECR_REGISTRY}/${ECR_REPOSITORY}:latest || true"
         }
     }
 }
