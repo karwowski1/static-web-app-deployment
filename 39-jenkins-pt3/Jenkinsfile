@@ -1,80 +1,71 @@
 pipeline {
-    agent { label 'ci' }
-
-    environment {
-        AWS_REGION     = "eu-central-1"
-        ECR_REGISTRY   = "ACCOUNT_ID.dkr.ecr.eu-central-1.amazonaws.com"
-        APP_NAME       = "task-api"
-        DEV_SERVICE    = "dev-task-api-service"
-        PROD_SERVICE   = "prod-task-api-service"
-        CLUSTER_NAME   = "dev-cluster"
-    }
+    agent any
 
     parameters {
-        choice(name: 'ENV', choices: ['dev', 'prod'], description: 'Target environment')
-        string(name: 'VERSION', defaultValue: '1.0.0', description: 'Build version')
+        choice(name: 'ENVIRONMENT', choices: ['dev', 'prod'], description: 'Target environment')
+    }
+
+    environment {
+        AWS_REGION     = 'eu-central-1'
+        ECR_REGISTRY   = '858986858999.dkr.ecr.eu-central-1.amazonaws.com'
+        APP_DIR        = '39-jenkins-pt3/app'
+        
+        DEPLOY_ENV     = "${params.ENVIRONMENT}"
+        ECR_REPOSITORY = "${params.ENVIRONMENT}-task-api"
+        ECS_CLUSTER    = "${params.ENVIRONMENT}-cluster"
+        ECS_SERVICE    = "${params.ENVIRONMENT}-task-api-service"
     }
 
     stages {
-        stage('Checkout') {
-            steps {
-                checkout scm
-            }
-        }
-
-        stage('Security Scan & Test') {
-            steps {
-                dir('app') {
-                    sh 'npm install'
-                    sh 'npm test'
-                }
-            }
-        }
-
-        stage('Docker Build & Push') {
+        stage('Build Image') {
             steps {
                 script {
-                    def imageTag = "${ECR_REGISTRY}/${parameters.ENV}-${APP_NAME}:${parameters.VERSION}-${BUILD_NUMBER}"
-                    dir('app') {
-                        sh "aws ecr get-login-password --region ${AWS_REGION} | docker login --username AWS --password-stdin ${ECR_REGISTRY}"
-                        sh "docker build -t ${imageTag} ."
-                        sh "docker push ${imageTag}"
+                    dir("${APP_DIR}") {
+                        dockerImage = docker.build("${ECR_REGISTRY}/${ECR_REPOSITORY}:${BUILD_NUMBER}")
                     }
                 }
             }
         }
 
-        stage('Deploy to Dev') {
-            when { expression { return parameters.ENV == 'dev' } }
+        stage('Push to ECR') {
             steps {
-                sh "aws ecs update-service --cluster ${CLUSTER_NAME} --service ${DEV_SERVICE} --force-new-deployment"
+                script {
+                    sh "aws ecr get-login-password --region ${AWS_REGION} | docker login --username AWS --password-stdin ${ECR_REGISTRY}"
+                    sh "docker push ${ECR_REGISTRY}/${ECR_REPOSITORY}:${BUILD_NUMBER}"
+                    sh "docker tag ${ECR_REGISTRY}/${ECR_REPOSITORY}:${BUILD_NUMBER} ${ECR_REGISTRY}/${ECR_REPOSITORY}:latest"
+                    sh "docker push ${ECR_REGISTRY}/${ECR_REPOSITORY}:latest"
+                }
             }
         }
 
-        stage('Manual Approval for Prod') {
-            when { expression { return parameters.ENV == 'prod' } }
+        stage('Approval') {
+            when {
+                expression { DEPLOY_ENV == 'prod' }
+            }
             steps {
-                input message: "Deploy version ${parameters.VERSION} to Production?", ok: "Approve"
+                input message: "Deploy version ${BUILD_NUMBER} to PRODUCTION?", ok: "Deploy"
             }
         }
 
-        stage('Deploy to Prod') {
-            when { expression { return parameters.ENV == 'prod' } }
+        stage('Deploy to ECS') {
             steps {
-                sh "aws ecs update-service --cluster prod-cluster --service ${PROD_SERVICE} --force-new-deployment"
+                script {
+                    sh """
+                    aws ecs update-service \
+                        --cluster ${ECS_CLUSTER} \
+                        --service ${ECS_SERVICE} \
+                        --force-new-deployment \
+                        --region ${AWS_REGION}
+                    """
+                }
             }
         }
     }
 
     post {
         always {
-            sh 'docker logout ${ECR_REGISTRY} || true'
-        }
-        success {
-            echo "Deployment to ${parameters.ENV} finished successfully."
-        }
-        failure {
-            echo "Deployment failed. Check CloudWatch logs."
+            sh "docker rmi ${ECR_REGISTRY}/${ECR_REPOSITORY}:${BUILD_NUMBER} || true"
+            sh "docker rmi ${ECR_REGISTRY}/${ECR_REPOSITORY}:latest || true"
         }
     }
 }

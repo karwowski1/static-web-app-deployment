@@ -2,11 +2,6 @@ resource "aws_ecs_cluster" "this" {
   name = "${var.environment}-cluster"
 }
 
-resource "aws_cloudwatch_log_group" "app_logs" {
-  name              = "/ecs/${var.environment}-task-api"
-  retention_in_days = 7
-}
-
 resource "aws_ecs_task_definition" "app" {
   family                   = "${var.environment}-task"
   network_mode             = "awsvpc"
@@ -31,4 +26,31 @@ resource "aws_ecs_task_definition" "app" {
       }
     }
   }])
+}
+
+resource "aws_ecs_service" "app_service" {
+  name            = "${var.environment}-task-api-service"
+  cluster         = aws_ecs_cluster.this.id
+  task_definition = aws_ecs_task_definition.app.arn
+  launch_type     = "FARGATE"
+  desired_count   = 1
+
+  depends_on = [aws_lb_listener.http]
+
+  load_balancer {
+    target_group_arn = aws_lb_target_group.app_tg.arn
+    container_name   = "task-api"
+    container_port   = 3000
+  }
+
+  network_configuration {
+    subnets          = var.private_subnets
+    security_groups  = [aws_security_group.ecs_tasks_sg.id]
+    assign_public_ip = false
+  }
+}
+
+resource "aws_cloudwatch_log_group" "app_logs" {
+  name              = "/ecs/${var.environment}-task-api"
+  retention_in_days = 7
 }
