@@ -1,0 +1,106 @@
+pipeline {
+    agent none
+
+    parameters {
+        choice(name: 'ENVIRONMENT', choices: ['dev', 'prod'], description: 'Target environment')
+    }
+
+    environment {
+        AWS_REGION      = 'eu-central-1'
+        ECR_REGISTRY    = '858986858999.dkr.ecr.eu-central-1.amazonaws.com'
+        APP_DIR         = 'app'
+        TF_APP_DIR      = 'terraform/app'
+        
+        ECR_REPOSITORY  = "${params.ENVIRONMENT}-task-api"
+        IMAGE_TAG       = "${params.ENVIRONMENT}-${BUILD_NUMBER}"
+        FULL_IMAGE_NAME = "${ECR_REGISTRY}/${ECR_REPOSITORY}:${IMAGE_TAG}"
+    }
+
+    stages {
+        stage('Infrastructure Plan') {
+            agent { label 'infra' }
+            steps {
+                dir("${TF_APP_DIR}") {
+                    sh 'terraform init'
+                    sh "terraform plan -var='environment=${params.ENVIRONMENT}' -out=tfplan"
+                }
+            }
+        }
+
+        stage('Approval') {
+            when { expression { params.ENVIRONMENT == 'prod' } }
+            steps {
+                input message: "Approve infrastructure changes and deployment to PROD?", ok: "Approve"
+            }
+        }
+
+        stage('Infrastructure Apply') {
+            agent { label 'infra' }
+            steps {
+                dir("${TF_APP_DIR}") {
+                    sh 'terraform apply -auto-approve tfplan'
+                }
+            }
+        }
+
+        stage('Build & Push Image') {
+            agent { label 'ci' }
+            steps {
+                script {
+                    dir("${APP_DIR}") {
+                        sh "aws ecr get-login-password --region ${AWS_REGION} | docker login --username AWS --password-stdin ${ECR_REGISTRY}"
+                        
+                        def appImage = docker.build("${FULL_IMAGE_NAME}")
+                        appImage.push()
+                        appImage.push('latest')
+                    }
+                }
+            }
+        }
+
+        stage('Deploy') {
+            agent { label 'infra' }
+            steps {
+                sh """
+                aws ecs update-service \
+                    --cluster ${params.ENVIRONMENT}-cluster \
+                    --service ${params.ENVIRONMENT}-task-api-service \
+                    --force-new-deployment \
+                    --region ${AWS_REGION}
+                """
+            }
+        }
+
+        stage('Health Check') {
+            agent { label 'infra' }
+            steps {
+                script {
+                    sleep 30 
+                    def status = sh(
+                        script: "curl -s -o /dev/null -w '%{http_code}' https://api.${params.ENVIRONMENT}.yourdomain.com/health || echo 'failed'",
+                        returnStdout: true
+                    ).trim()
+                    
+                    if (status != "200") {
+                        error "Health Check failed with status: ${status}"
+                    }
+                }
+            }
+        }
+    }
+
+    post {
+        always {
+            node('ci') {
+                sh "docker rmi ${FULL_IMAGE_NAME} || true"
+                sh "docker rmi ${ECR_REGISTRY}/${ECR_REPOSITORY}:latest || true"
+            }
+        }
+        success {
+            echo "Deployment to ${params.ENVIRONMENT} completed successfully."
+        }
+        failure {
+            echo "Deployment failed. Check infrastructure or application logs."
+        }
+    }
+}
