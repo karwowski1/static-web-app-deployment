@@ -5,7 +5,7 @@ provider "aws" {
 data "aws_caller_identity" "current" {}
 
 resource "aws_s3_bucket" "terraform_state" {
-  bucket = "jenkins-pt3-tf-state-skibidi"
+  bucket = "jenkins-pt4-tf-state-skibidi"
 }
 
 resource "aws_s3_bucket_versioning" "terraform_state_versioning" {
