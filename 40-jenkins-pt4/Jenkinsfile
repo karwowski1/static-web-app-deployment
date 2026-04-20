@@ -9,15 +9,39 @@ pipeline {
         AWS_REGION      = 'eu-central-1'
         ECR_REGISTRY    = '858986858999.dkr.ecr.eu-central-1.amazonaws.com'
         APP_DIR         = 'app'
-        TF_APP_DIR      = 'terraform/app'
-        
+        TF_APP_DIR      = "terraform/envs/${params.ENVIRONMENT}" 
         ECR_REPOSITORY  = "${params.ENVIRONMENT}-task-api"
         IMAGE_TAG       = "${params.ENVIRONMENT}-${BUILD_NUMBER}"
         FULL_IMAGE_NAME = "${ECR_REGISTRY}/${ECR_REPOSITORY}:${IMAGE_TAG}"
     }
 
     stages {
-        stage('Infrastructure Plan') {
+        stage('Build & Test') {
+            agent { label 'ci' }
+            steps {
+                dir("${APP_DIR}") {
+                    sh 'npm install'
+                    sh 'npm test'
+                }
+            }
+        }
+
+        stage('Build & Push Image') {
+            agent { label 'ci' }
+            steps {
+                script {
+                    dir("${APP_DIR}") {
+                        sh "aws ecr get-login-password --region ${AWS_REGION} | docker login --username AWS --password-stdin ${ECR_REGISTRY}"
+                        
+                        def appImage = docker.build("${FULL_IMAGE_NAME}")
+                        appImage.push()
+                        appImage.push('latest')
+                    }
+                }
+            }
+        }
+
+        stage('Infrastructure Init & Plan') {
             agent { label 'infra' }
             steps {
                 dir("${TF_APP_DIR}") {
@@ -43,22 +67,7 @@ pipeline {
             }
         }
 
-        stage('Build & Push Image') {
-            agent { label 'ci' }
-            steps {
-                script {
-                    dir("${APP_DIR}") {
-                        sh "aws ecr get-login-password --region ${AWS_REGION} | docker login --username AWS --password-stdin ${ECR_REGISTRY}"
-                        
-                        def appImage = docker.build("${FULL_IMAGE_NAME}")
-                        appImage.push()
-                        appImage.push('latest')
-                    }
-                }
-            }
-        }
-
-        stage('Deploy') {
+        stage('Deploy (ECS Update)') {
             agent { label 'infra' }
             steps {
                 sh """
