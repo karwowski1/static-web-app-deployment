@@ -6,7 +6,7 @@ module "vpc" {
   azs                  = ["eu-central-1a", "eu-central-1b"]
   public_subnet_cidrs  = ["10.0.1.0/24", "10.0.2.0/24"]
   private_subnet_cidrs = ["10.0.11.0/24", "10.0.12.0/24"]
-  vpc_endpoints        = ["s3", "ecr_api"]
+  vpc_endpoints        = ["s3", "ecr_api", "ecr_dkr"]
   aws_region           = "eu-central-1"
 }
 
