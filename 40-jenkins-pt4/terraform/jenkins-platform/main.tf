@@ -11,9 +11,11 @@ module "vpc" {
 }
 
 module "jenkins" {
-  source      = "../modules/jenkins"
-  environment = "dev"
-  vpc_id      = module.vpc.vpc_id
-  subnet_id   = module.vpc.public_subnet_ids[0]
-  my_ip       = "78.88.142.21/32"
+  source        = "../modules/jenkins"
+  environment   = "dev"
+  vpc_id        = module.vpc.vpc_id
+  subnet_id     = module.vpc.public_subnet_ids[0]
+  my_ip         = "78.88.142.21/32"
+  instance_type = "t3.medium"
+  key_name      = "jenkins-pt3-key"
 }
