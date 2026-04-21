@@ -9,7 +9,7 @@ pipeline {
         AWS_REGION      = 'eu-central-1'
         ECR_REGISTRY    = '858986858999.dkr.ecr.eu-central-1.amazonaws.com'
         APP_DIR         = 'app'
-        TF_APP_DIR      = "terraform/envs/${params.ENVIRONMENT}" 
+        TF_APP_DIR      = "terraform/envs/${params.ENVIRONMENT}"
         ECR_REPOSITORY  = "${params.ENVIRONMENT}-task-api"
         IMAGE_TAG       = "${params.ENVIRONMENT}-${BUILD_NUMBER}"
         FULL_IMAGE_NAME = "${ECR_REGISTRY}/${ECR_REPOSITORY}:${IMAGE_TAG}"
@@ -32,7 +32,6 @@ pipeline {
                 script {
                     dir("${APP_DIR}") {
                         sh "aws ecr get-login-password --region ${AWS_REGION} | docker login --username AWS --password-stdin ${ECR_REGISTRY}"
-                        
                         def appImage = docker.build("${FULL_IMAGE_NAME}")
                         appImage.push()
                         appImage.push('latest')
@@ -54,7 +53,7 @@ pipeline {
         stage('Approval') {
             when { expression { params.ENVIRONMENT == 'prod' } }
             steps {
-                input message: "Approve infrastructure changes and deployment to PROD?", ok: "Approve"
+                input message: "Approve deployment to PROD?", ok: "Approve"
             }
         }
 
@@ -84,14 +83,14 @@ pipeline {
             agent { label 'infra' }
             steps {
                 script {
-                    sleep 30 
+                    sleep 60
                     def status = sh(
                         script: "curl -s -o /dev/null -w '%{http_code}' https://api.${params.ENVIRONMENT}.yourdomain.com/health || echo 'failed'",
                         returnStdout: true
                     ).trim()
                     
                     if (status != "200") {
-                        error "Health Check failed with status: ${status}"
+                        error "Deployment validation failed with status: ${status}"
                     }
                 }
             }
@@ -104,12 +103,6 @@ pipeline {
                 sh "docker rmi ${FULL_IMAGE_NAME} || true"
                 sh "docker rmi ${ECR_REGISTRY}/${ECR_REPOSITORY}:latest || true"
             }
-        }
-        success {
-            echo "Deployment to ${params.ENVIRONMENT} completed successfully."
-        }
-        failure {
-            echo "Deployment failed. Check infrastructure or application logs."
         }
     }
 }
