@@ -18,7 +18,12 @@ pipeline {
 
     stages {
         stage('Build & Test') {
-            agent { label 'ci' }
+            agent {
+                docker {
+                    image 'node:18'
+                    label 'ci'
+                }
+            }
             steps {
                 dir("${APP_DIR}") {
                     sh 'npm install'
@@ -78,14 +83,17 @@ pipeline {
             agent { label 'infra' }
             steps {
                 script {
-                    sleep 60
-                    def status = sh(
-                        script: "curl -s -o /dev/null -w '%{http_code}' https://api.${params.ENVIRONMENT}.yourdomain.com/health || echo 'failed'",
-                        returnStdout: true
-                    ).trim()
-                    
-                    if (status != "200") {
-                        error "Validation failed: ${status}"
+                    dir("${TF_APP_DIR}") {
+                        def albDns = sh(script: 'terraform output -raw alb_dns_name', returnStdout: true).trim()
+                        sleep 60
+                        def status = sh(
+                            script: "curl -s -o /dev/null -w '%{http_code}' http://${albDns}/health || echo 'failed'",
+                            returnStdout: true
+                        ).trim()
+                        
+                        if (status != "200") {
+                            error "Validation failed: ${status}"
+                        }
                     }
                 }
             }
