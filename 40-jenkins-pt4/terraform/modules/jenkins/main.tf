@@ -47,11 +47,17 @@ resource "aws_instance" "jenkins_controller" {
 
   user_data = <<-EOF
                 #!/bin/bash
-                while [ ! -b /dev/sdh ]; do sleep 5; done
-                sudo mkfs -t xfs /dev/sdh || true
+                DEVICE=$(lsblk -dnpo NAME,SIZE | grep "30G" | awk '{print $1}')
+                while [ -z "$DEVICE" ]; do
+                  sleep 5
+                  DEVICE=$(lsblk -dnpo NAME,SIZE | grep "30G" | awk '{print $1}')
+                done
+                
+                sudo mkfs -t xfs $DEVICE || true
                 sudo mkdir -p /var/lib/jenkins
-                sudo mount /dev/sdh /var/lib/jenkins
-                echo '/dev/sdh /var/lib/jenkins xfs defaults,nofail 0 2' | sudo tee -a /etc/fstab
+                sudo mount $DEVICE /var/lib/jenkins
+                echo "$DEVICE /var/lib/jenkins xfs defaults,nofail 0 2" | sudo tee -a /etc/fstab
+
                 sudo yum update -y
                 sudo curl -sL -o /etc/yum.repos.d/jenkins.repo https://pkg.jenkins.io/redhat-stable/jenkins.repo
                 sudo rpm --import https://pkg.jenkins.io/redhat-stable/jenkins.io-2023.key
@@ -84,8 +90,7 @@ resource "aws_instance" "agent_ci" {
   vpc_security_group_ids = [aws_security_group.jenkins_sg.id]
   iam_instance_profile   = aws_iam_instance_profile.jenkins_agent_profile.name
   key_name               = var.key_name
-
-  user_data = <<-EOF
+  user_data              = <<-EOF
                 #!/bin/bash
                 sudo yum update -y
                 sudo yum install java-21-amazon-corretto -y
@@ -93,8 +98,7 @@ resource "aws_instance" "agent_ci" {
                 sudo systemctl enable --now docker
                 sudo usermod -aG docker ec2-user
                 EOF
-
-  tags = { Name = "${var.environment}-jenkins-agent-ci" }
+  tags                   = { Name = "${var.environment}-jenkins-agent-ci" }
 }
 
 resource "aws_instance" "agent_infra" {
@@ -104,8 +108,7 @@ resource "aws_instance" "agent_infra" {
   vpc_security_group_ids = [aws_security_group.jenkins_sg.id]
   iam_instance_profile   = aws_iam_instance_profile.jenkins_agent_profile.name
   key_name               = var.key_name
-
-  user_data = <<-EOF
+  user_data              = <<-EOF
                 #!/bin/bash
                 sudo yum update -y
                 sudo yum install java-21-amazon-corretto -y
@@ -113,6 +116,5 @@ resource "aws_instance" "agent_infra" {
                 sudo yum-config-manager --add-repo https://rpm.releases.hashicorp.com/AmazonLinux/hashicorp.repo
                 sudo yum -y install terraform
                 EOF
-
-  tags = { Name = "${var.environment}-jenkins-agent-infra" }
+  tags                   = { Name = "${var.environment}-jenkins-agent-infra" }
 }

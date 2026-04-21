@@ -2,7 +2,7 @@ pipeline {
     agent none
 
     parameters {
-        choice(name: 'ENVIRONMENT', choices: ['dev', 'prod'], description: 'Target environment')
+        choice(name: 'ENVIRONMENT', choices: ['dev', 'prod'], description: 'Environment')
     }
 
     environment {
@@ -13,6 +13,7 @@ pipeline {
         ECR_REPOSITORY  = "${params.ENVIRONMENT}-task-api"
         IMAGE_TAG       = "${params.ENVIRONMENT}-${BUILD_NUMBER}"
         FULL_IMAGE_NAME = "${ECR_REGISTRY}/${ECR_REPOSITORY}:${IMAGE_TAG}"
+        AWS_CREDENTIALS_ID = 'aws-credentials'
     }
 
     stages {
@@ -26,25 +27,32 @@ pipeline {
             }
         }
 
-        stage('Build & Push Image') {
+        stage('Push Image') {
             agent { label 'ci' }
             steps {
                 script {
                     dir("${APP_DIR}") {
-                        sh "aws ecr get-login-password --region ${AWS_REGION} | docker login --username AWS --password-stdin ${ECR_REGISTRY}"
-                        def appImage = docker.build("${FULL_IMAGE_NAME}")
-                        appImage.push()
-                        appImage.push('latest')
+                        withCredentials([[
+                            $class: 'AmazonWebServicesCredentialsBinding',
+                            credentialsId: env.AWS_CREDENTIALS_ID,
+                            accessKeyVariable: 'AWS_ACCESS_KEY_ID',
+                            secretKeyVariable: 'AWS_SECRET_ACCESS_KEY'
+                        ]]) {
+                            sh "aws ecr get-login-password --region ${AWS_REGION} | docker login --username AWS --password-stdin ${ECR_REGISTRY}"
+                            def appImage = docker.build("${FULL_IMAGE_NAME}")
+                            appImage.push()
+                            appImage.push('latest')
+                        }
                     }
                 }
             }
         }
 
-        stage('Infrastructure Init & Plan') {
+        stage('Infrastructure Plan') {
             agent { label 'infra' }
             steps {
                 dir("${TF_APP_DIR}") {
-                    sh 'terraform init'
+                    sh 'terraform init -input=false'
                     sh "terraform plan -var='environment=${params.ENVIRONMENT}' -out=tfplan"
                 }
             }
@@ -53,7 +61,7 @@ pipeline {
         stage('Approval') {
             when { expression { params.ENVIRONMENT == 'prod' } }
             steps {
-                input message: "Approve deployment to PROD?", ok: "Approve"
+                input message: "Deploy to PROD?"
             }
         }
 
@@ -66,20 +74,7 @@ pipeline {
             }
         }
 
-        stage('Deploy (ECS Update)') {
-            agent { label 'infra' }
-            steps {
-                sh """
-                aws ecs update-service \
-                    --cluster ${params.ENVIRONMENT}-cluster \
-                    --service ${params.ENVIRONMENT}-task-api-service \
-                    --force-new-deployment \
-                    --region ${AWS_REGION}
-                """
-            }
-        }
-
-        stage('Health Check') {
+        stage('Deployment Validation') {
             agent { label 'infra' }
             steps {
                 script {
@@ -90,7 +85,7 @@ pipeline {
                     ).trim()
                     
                     if (status != "200") {
-                        error "Deployment validation failed with status: ${status}"
+                        error "Validation failed: ${status}"
                     }
                 }
             }
@@ -101,7 +96,6 @@ pipeline {
         always {
             node('ci') {
                 sh "docker rmi ${FULL_IMAGE_NAME} || true"
-                sh "docker rmi ${ECR_REGISTRY}/${ECR_REPOSITORY}:latest || true"
             }
         }
     }
