@@ -8,8 +8,8 @@ pipeline {
     environment {
         AWS_REGION      = 'eu-central-1'
         ECR_REGISTRY    = '858986858999.dkr.ecr.eu-central-1.amazonaws.com'
-        APP_DIR         = 'app'
-        TF_APP_DIR      = "terraform/envs/${params.ENVIRONMENT}"
+        APP_DIR         = '40-jenkins-pt4/app'
+        TF_APP_DIR      = "40-jenkins-pt4/terraform/envs/${params.ENVIRONMENT}"
         ECR_REPOSITORY  = "${params.ENVIRONMENT}-task-api"
         IMAGE_TAG       = "${params.ENVIRONMENT}-${BUILD_NUMBER}"
         FULL_IMAGE_NAME = "${ECR_REGISTRY}/${ECR_REPOSITORY}:${IMAGE_TAG}"
