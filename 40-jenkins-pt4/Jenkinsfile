@@ -22,7 +22,7 @@ pipeline {
             steps {
                 dir("${TF_APP_DIR}") {
                     sh 'terraform init -input=false'
-                    sh "terraform apply -target=module.app_cluster.aws_ecr_repository.app -var='environment=${params.ENVIRONMENT}' -auto-approve"
+                    sh "terraform apply -target=module.app_cluster.aws_ecr_repository.app -auto-approve"
                 }
             }
         }
@@ -61,7 +61,7 @@ pipeline {
             steps {
                 dir("${TF_APP_DIR}") {
                     sh 'terraform init -input=false'
-                    sh "terraform plan -var='environment=${params.ENVIRONMENT}' -out=tfplan"
+                    sh "terraform plan -out=tfplan"
                 }
             }
         }
