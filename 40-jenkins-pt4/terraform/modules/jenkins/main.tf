@@ -139,7 +139,7 @@ resource "aws_instance" "agent_ci" {
 
 resource "aws_instance" "agent_infra" {
   ami                    = data.aws_ami.amazon_linux_2023.id
-  instance_type          = "t3.micro"
+  instance_type          = "t3.small"
   subnet_id              = var.private_subnet_id
   vpc_security_group_ids = [aws_security_group.jenkins_sg.id]
   iam_instance_profile   = aws_iam_instance_profile.jenkins_agent_profile.name
