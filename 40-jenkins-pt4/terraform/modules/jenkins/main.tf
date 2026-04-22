@@ -71,7 +71,9 @@ resource "aws_instance" "jenkins_controller" {
       DEVICE=$(lsblk -dpno NAME,TYPE | grep "disk" | grep -v "$ROOT_DISK" | awk '{print $1}' | head -n 1)
     done
     
-    sudo mkfs -t xfs -f $DEVICE
+    if ! blkid $DEVICE; then
+      sudo mkfs -t xfs $DEVICE
+    fi
     sudo mkdir -p /var/lib/jenkins
     sudo mount $DEVICE /var/lib/jenkins
     
@@ -81,6 +83,7 @@ resource "aws_instance" "jenkins_controller" {
     fi
 
     sudo yum update -y
+    sudo yum install git -y
     sudo curl -sL -o /etc/yum.repos.d/jenkins.repo https://pkg.jenkins.io/redhat-stable/jenkins.repo
     sudo rpm --import https://pkg.jenkins.io/redhat-stable/jenkins.io-2023.key
     sudo dnf install java-21-amazon-corretto -y
@@ -88,6 +91,11 @@ resource "aws_instance" "jenkins_controller" {
     sudo chown -R jenkins:jenkins /var/lib/jenkins
     sudo systemctl enable --now jenkins
   EOF
+
+  root_block_device {
+    volume_size = 30
+    volume_type = "gp3"
+  }
 
   tags = { Name = "${var.environment}-jenkins-controller" }
 }
@@ -115,12 +123,18 @@ resource "aws_instance" "agent_ci" {
   user_data              = <<-EOF
     #!/bin/bash
     sudo yum update -y
+    sudo yum install git -y
     sudo yum install java-21-amazon-corretto -y
     sudo yum install docker -y
     sudo systemctl enable --now docker
     sudo usermod -aG docker ec2-user
   EOF
   tags                   = { Name = "${var.environment}-jenkins-agent-ci" }
+
+  root_block_device {
+    volume_size = 30
+    volume_type = "gp3"
+  }
 }
 
 resource "aws_instance" "agent_infra" {
@@ -133,10 +147,16 @@ resource "aws_instance" "agent_infra" {
   user_data              = <<-EOF
     #!/bin/bash
     sudo yum update -y
+    sudo yum install git -y
     sudo yum install java-21-amazon-corretto -y
     sudo yum install -y yum-utils
     sudo yum-config-manager --add-repo https://rpm.releases.hashicorp.com/AmazonLinux/hashicorp.repo
     sudo yum -y install terraform
   EOF
   tags                   = { Name = "${var.environment}-jenkins-agent-infra" }
+
+  root_block_device {
+    volume_size = 30
+    volume_type = "gp3"
+  }
 }

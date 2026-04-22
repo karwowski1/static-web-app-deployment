@@ -17,6 +17,16 @@ pipeline {
     }
 
     stages {
+        stage('Prepare ECR') {
+            agent { label 'infra' }
+            steps {
+                dir("${TF_APP_DIR}") {
+                    sh 'terraform init -input=false'
+                    sh "terraform apply -target=module.app_cluster.aws_ecr_repository.app -var='environment=${params.ENVIRONMENT}' -auto-approve"
+                }
+            }
+        }
+
         stage('Build & Test') {
             agent {
                 docker {
@@ -37,17 +47,10 @@ pipeline {
             steps {
                 script {
                     dir("${APP_DIR}") {
-                        withCredentials([[
-                            $class: 'AmazonWebServicesCredentialsBinding',
-                            credentialsId: env.AWS_CREDENTIALS_ID,
-                            accessKeyVariable: 'AWS_ACCESS_KEY_ID',
-                            secretKeyVariable: 'AWS_SECRET_ACCESS_KEY'
-                        ]]) {
-                            sh "aws ecr get-login-password --region ${AWS_REGION} | docker login --username AWS --password-stdin ${ECR_REGISTRY}"
-                            def appImage = docker.build("${FULL_IMAGE_NAME}")
-                            appImage.push()
-                            appImage.push('latest')
-                        }
+                        sh "aws ecr get-login-password --region ${AWS_REGION} | docker login --username AWS --password-stdin ${ECR_REGISTRY}"
+                        def appImage = docker.build("${FULL_IMAGE_NAME}")
+                        appImage.push()
+                        appImage.push('latest')
                     }
                 }
             }
