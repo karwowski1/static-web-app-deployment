@@ -2,22 +2,38 @@ pipeline {
     agent none
 
     parameters {
-        choice(name: 'ENVIRONMENT', choices: ['dev', 'prod'], description: 'Target environment')
+        choice(name: 'ENVIRONMENT', choices: ['dev', 'prod'], description: 'Environment')
     }
 
     environment {
         AWS_REGION      = 'eu-central-1'
         ECR_REGISTRY    = '858986858999.dkr.ecr.eu-central-1.amazonaws.com'
-        APP_DIR         = 'app'
-        TF_APP_DIR      = "terraform/envs/${params.ENVIRONMENT}"
+        APP_DIR         = '40-jenkins-pt4/app'
+        TF_APP_DIR      = "40-jenkins-pt4/terraform/envs/${params.ENVIRONMENT}"
         ECR_REPOSITORY  = "${params.ENVIRONMENT}-task-api"
         IMAGE_TAG       = "${params.ENVIRONMENT}-${BUILD_NUMBER}"
         FULL_IMAGE_NAME = "${ECR_REGISTRY}/${ECR_REPOSITORY}:${IMAGE_TAG}"
+        AWS_CREDENTIALS_ID = 'aws-credentials'
     }
 
     stages {
+        stage('Prepare ECR') {
+            agent { label 'infra' }
+            steps {
+                dir("${TF_APP_DIR}") {
+                    sh 'terraform init -input=false'
+                    sh "terraform apply -target=module.app_cluster.aws_ecr_repository.app -auto-approve"
+                }
+            }
+        }
+
         stage('Build & Test') {
-            agent { label 'ci' }
+            agent {
+                docker {
+                    image 'node:18'
+                    label 'ci'
+                }
+            }
             steps {
                 dir("${APP_DIR}") {
                     sh 'npm install'
@@ -26,7 +42,7 @@ pipeline {
             }
         }
 
-        stage('Build & Push Image') {
+        stage('Push Image') {
             agent { label 'ci' }
             steps {
                 script {
@@ -40,12 +56,12 @@ pipeline {
             }
         }
 
-        stage('Infrastructure Init & Plan') {
+        stage('Infrastructure Plan') {
             agent { label 'infra' }
             steps {
                 dir("${TF_APP_DIR}") {
-                    sh 'terraform init'
-                    sh "terraform plan -var='environment=${params.ENVIRONMENT}' -out=tfplan"
+                    sh 'terraform init -input=false'
+                    sh "terraform plan -out=tfplan"
                 }
             }
         }
@@ -53,7 +69,7 @@ pipeline {
         stage('Approval') {
             when { expression { params.ENVIRONMENT == 'prod' } }
             steps {
-                input message: "Approve deployment to PROD?", ok: "Approve"
+                input message: "Deploy to PROD?"
             }
         }
 
@@ -61,36 +77,28 @@ pipeline {
             agent { label 'infra' }
             steps {
                 dir("${TF_APP_DIR}") {
+                    sh 'terraform init -input=false'
                     sh 'terraform apply -auto-approve tfplan'
                 }
             }
         }
 
-        stage('Deploy (ECS Update)') {
-            agent { label 'infra' }
-            steps {
-                sh """
-                aws ecs update-service \
-                    --cluster ${params.ENVIRONMENT}-cluster \
-                    --service ${params.ENVIRONMENT}-task-api-service \
-                    --force-new-deployment \
-                    --region ${AWS_REGION}
-                """
-            }
-        }
-
-        stage('Health Check') {
+        stage('Deployment Validation') {
             agent { label 'infra' }
             steps {
                 script {
-                    sleep 60
-                    def status = sh(
-                        script: "curl -s -o /dev/null -w '%{http_code}' https://api.${params.ENVIRONMENT}.yourdomain.com/health || echo 'failed'",
-                        returnStdout: true
-                    ).trim()
-                    
-                    if (status != "200") {
-                        error "Deployment validation failed with status: ${status}"
+                    dir("${TF_APP_DIR}") {
+                        sh 'terraform init -input=false'
+                        def albDns = sh(script: 'terraform output -raw alb_dns_name', returnStdout: true).trim()
+                        sleep 60
+                        def status = sh(
+                            script: "curl -s -o /dev/null -w '%{http_code}' http://${albDns}/health || echo 'failed'",
+                            returnStdout: true
+                        ).trim()
+                        
+                        if (status != "200") {
+                            error "Validation failed: ${status}"
+                        }
                     }
                 }
             }
@@ -101,7 +109,6 @@ pipeline {
         always {
             node('ci') {
                 sh "docker rmi ${FULL_IMAGE_NAME} || true"
-                sh "docker rmi ${ECR_REGISTRY}/${ECR_REPOSITORY}:latest || true"
             }
         }
     }
