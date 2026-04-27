@@ -1,0 +1,122 @@
+resource "azurerm_cdn_frontdoor_profile" "main" {
+  name                = "afd-prof-${var.project_name}"
+  resource_group_name = var.resource_group_name
+  sku_name            = "Standard_AzureFrontDoor"
+  tags                = var.tags
+}
+
+resource "azurerm_cdn_frontdoor_endpoint" "main" {
+  name                     = "afde-${var.project_name}"
+  cdn_frontdoor_profile_id = azurerm_cdn_frontdoor_profile.main.id
+  tags                     = var.tags
+}
+
+resource "azurerm_cdn_frontdoor_origin_group" "main" {
+  name                     = "default-origin-group"
+  cdn_frontdoor_profile_id = azurerm_cdn_frontdoor_profile.main.id
+  session_affinity_enabled = false
+
+  load_balancing {
+    additional_latency_in_milliseconds = 50
+    sample_size                        = 4
+    successful_samples_required        = 3
+  }
+
+  health_probe {
+    path                = "/"
+    request_type        = "HEAD"
+    protocol            = "Https"
+    interval_in_seconds = 100
+  }
+}
+
+resource "azurerm_cdn_frontdoor_origin" "main" {
+  name                           = "staticweborigin"
+  cdn_frontdoor_origin_group_id  = azurerm_cdn_frontdoor_origin_group.main.id
+  enabled                        = true
+  host_name                      = var.storage_host_name
+  http_port                      = 80
+  https_port                     = 443
+  origin_host_header             = var.storage_host_name
+  priority                       = 1
+  weight                         = 1000
+  certificate_name_check_enabled = true
+}
+
+resource "azurerm_cdn_frontdoor_route" "main" {
+  name                          = "default-route"
+  cdn_frontdoor_endpoint_id     = azurerm_cdn_frontdoor_endpoint.main.id
+  cdn_frontdoor_origin_group_id = azurerm_cdn_frontdoor_origin_group.main.id
+  cdn_frontdoor_origin_ids      = [azurerm_cdn_frontdoor_origin.main.id]
+  supported_protocols           = ["Http", "Https"]
+  patterns_to_match             = ["/*"]
+  forwarding_protocol           = "HttpsOnly"
+  link_to_default_domain        = true
+  https_redirect_enabled        = true
+}
+
+resource "azurerm_cdn_frontdoor_firewall_policy" "main" {
+  name                              = "afdwaf${replace(var.project_name, "-", "")}"
+  resource_group_name               = var.resource_group_name
+  sku_name                          = azurerm_cdn_frontdoor_profile.main.sku_name
+  enabled                           = true
+  mode                              = "Prevention"
+  redirect_url                      = null
+  custom_block_response_status_code = 403
+
+  custom_rule {
+    name                           = "RateLimitRule"
+    enabled                        = true
+    priority                       = 100
+    rate_limit_duration_in_minutes = 1
+    rate_limit_threshold           = 100
+    type                           = "RateLimitRule"
+    action                         = "Block"
+
+    match_condition {
+      match_variable     = "RemoteAddr"
+      operator           = "IPMatch"
+      negation_condition = false
+      match_values       = ["0.0.0.0/0"]
+    }
+  }
+
+  tags = var.tags
+}
+
+resource "azurerm_cdn_frontdoor_security_policy" "main" {
+  name                     = "afdsp-${var.project_name}"
+  cdn_frontdoor_profile_id = azurerm_cdn_frontdoor_profile.main.id
+
+  security_policies {
+    firewall {
+      cdn_frontdoor_firewall_policy_id = azurerm_cdn_frontdoor_firewall_policy.main.id
+
+      association {
+        domain {
+          cdn_frontdoor_domain_id = azurerm_cdn_frontdoor_endpoint.main.id
+        }
+        patterns_to_match = ["/*"]
+      }
+    }
+  }
+}
+
+resource "azurerm_monitor_diagnostic_setting" "afd" {
+  name               = "diag-afd-${var.project_name}"
+  target_resource_id = azurerm_cdn_frontdoor_profile.main.id
+  storage_account_id = var.log_storage_account_id
+
+  enabled_log {
+    category = "FrontDoorAccessLog"
+  }
+
+  enabled_log {
+    category = "FrontDoorWebApplicationFirewallLog"
+  }
+
+  metric {
+    category = "AllMetrics"
+    enabled  = true
+  }
+}
