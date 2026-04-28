@@ -56,7 +56,7 @@ resource "azurerm_cdn_frontdoor_route" "main" {
 }
 
 resource "azurerm_cdn_frontdoor_firewall_policy" "main" {
-  name                              = "afdwaf${replace(var.project_name, "-", "")}"
+  name                              = "afdwaf-${var.project_name}-policy"
   resource_group_name               = var.resource_group_name
   sku_name                          = azurerm_cdn_frontdoor_profile.main.sku_name
   enabled                           = true

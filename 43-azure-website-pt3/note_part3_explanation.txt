@@ -1,0 +1,47 @@
+========================================================================
+NOTATKA DO PROJEKTU: Azure Static Website (Część 3)
+========================================================================
+
+To zadanie jest bezpośrednim rozwinięciem infrastruktury z części 2. Skupiamy się w nim na utwardzeniu zabezpieczeń, wprowadzeniu monitoringu oraz automatyzacji wdrożeń zgodnie z najlepszymi praktykami "Enterprise". Poniżej znajduje się wyjaśnienie kluczowych decyzji architektonicznych i użytych zasobów (resources) w Terraformie.
+
+1. ARCHITEKTURA I ZASOBY CHMUROWE (Azure)
+------------------------------------------------------------------------
+
+* Moduł CDN (Azure Front Door):
+  Używamy Azure Front Door (zamiast starszego CDN Profile), ponieważ jest to nowoczesna usługa Microsoftu z wbudowaną integracją WAF (Web Application Firewall) oraz lepszym zarządzaniem ruchem na poziomie warstwy 7.
+  
+  - azurerm_cdn_frontdoor_profile, _endpoint, _origin_group, _origin, _route: Te komponenty definiują odpowiednio profil usługi, publiczny adres URL, zbiór serwerów backendowych (origin), nasz konkretny Storage Account jako serwer oraz zasady kierowania ruchu. W `route` mamy włączone `https_redirect_enabled = true`, co spełnia wymóg przekierowania HTTP -> HTTPS (301).
+  
+  - azurerm_cdn_frontdoor_firewall_policy: To nasz WAF. Służy do ochrony przed atakami na warstwę aplikacyjną. Skonfigurowaliśmy w nim `custom_rule` z limitem rate (RateLimitRule), który ucina ruch ze statusem 403 (Forbidden), jeśli ktoś wykona więcej niż 100 zapytań na minutę z jednego IP. Jest to ochrona przed atakami DDoS typu HTTP flood.
+  
+  - azurerm_cdn_frontdoor_security_policy: Służy do "spięcia" (przypisania) wyżej wymienionej polityki WAF bezpośrednio do endpointu Front Doora. Bez tego WAF by istniał, ale nie filtrowałby ruchu.
+
+* Moduł Storage Account (Hosting Strony):
+  - azurerm_storage_account_static_website: Automatycznie tworzy kontener `$web` i konfiguruje konto do serwowania stron WWW.
+  W części 3 zdefiniowaliśmy pliki dla własnych stron błędów (`error_404_document` i dodaliśmy w aplikacji `4xx.html`, `5xx.html`). Dzięki temu, gdy Front Door zwróci błąd klienta lub origin server (nasz storage) odpowie błędem, użytkownik zobaczy przyjazny komunikat zamiast surowego XMLa z Azure.
+
+* Moduł Website Content (Wdrażanie Plików):
+  - azurerm_storage_blob: Służy do automatycznego wysyłania (uploadu) naszych plików z kodem strony (z folderu `apps/`) do kontenera `$web`. Oddzielenie plików HTML (aplikacji) od definicji środowiska (`envs/dev`) to bardzo ważna, dobra praktyka – kod infrastruktury (IaC) żyje obok kodu aplikacji, a nie wewnątrz niego.
+
+* Moduł Log Storage (Archiwizacja Diagnostyki):
+  - azurerm_storage_account: Utworzyliśmy oddzielne konto tylko na logi diagnostyczne (tzw. "cold storage"). 
+  - azurerm_storage_management_policy: Reguła cyklu życia (Lifecycle Rule). Wymogiem było przechowywanie logów przez 30 dni. Ta reguła dba o to, by automatycznie (bez naszego udziału) kasować obiekty (bloby) starsze niż 30 dni. Optymalizuje to koszty utrzymania chmury.
+
+* Moduł Monitoring (Obserwowalność):
+  - azurerm_monitor_diagnostic_setting: Instruuje chmurę, by brała metryki z Front Doora oraz logi (z dołączonego WAFa) i wysyłała je w jedno miejsce – do nowo utworzonego konta `log-storage`. To niezbędne dla audytów bezpieczeństwa.
+  - azurerm_portal_dashboard: Narzędzie typu "Infrastructure as Code" pozwalające wykreować wizualną tablicę (Dashboard) w panelu Azure (portal.azure.com). W zadaniu była mowa o stworzeniu tablicy z metrykami WAF i zapytań – ten zasób dostarcza fundament (szkic) dla tej tablicy przy każdym wdrożeniu.
+
+
+2. AUTOMATYZACJA CI/CD I BEZPIECZEŃSTWO (Jenkins)
+------------------------------------------------------------------------
+
+Zamiast wdrażać wszystko z laptopa, użyliśmy Jenkinsa jako źródła prawdy.
+Plik `Jenkinsfile` wdraża najważniejsze założenia SecOps:
+
+  - Least Privilege (Najmniejsze Uprawnienia): Posiadamy dwie role SPN (Service Principal Name). Pierwsza (używana w `terraform plan`) ma dostęp tylko do odczytu w Azure (nie może nic zepsuć/zmienić, idealne na etap Pull Request / CI). Dopiero gdy plan zostanie zaakceptowany przez człowieka, etap `terraform apply` loguje się używając poświadczeń posiadających moc zapisu (Write Access).
+  
+  - Plan as Artifact: Polecenie `terraform plan -out=tfplan` generuje absolutny "odcisk" (snapshot) planowanych zmian. Jenkins zachowuje ten plik jako artefakt, by `terraform apply tfplan` wdrożyło *dokładnie* to, co zostało zweryfikowane sekundę wcześniej. Eliminuje to ryzyko wystąpienia tzw. "Configuration Drift" (ktoś ręcznie zmieni coś na portalu pomiędzy wykonaniem komendy plan a apply).
+  
+  - Disable Concurrent Builds: Opcja w Jenkinsie. Gdyby dwóch programistów naraz wcisnęło "Build", mogłoby to doprowadzić do wyścigu (race condition) lub nadpisania Remote State w Azure Blob. Jenkins to kolejkkuje.
+  
+  - Manual Approval: Instrukcja `input` pauzuje wdrożenie (pipeline) w etapie "Approval". Dzięki temu zrealizowany jest wymóg "job runs on demand po zatwierdzeniu". Inżynier DevOps musi fizycznie kliknąć "Deploy", by pozwolić na produkcyjne Apply.
