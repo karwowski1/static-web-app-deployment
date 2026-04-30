@@ -14,9 +14,10 @@ module "storage_account" {
 }
 
 module "website_content" {
-  source               = "../../modules/website-content"
-  storage_account_name = module.storage_account.storage_account_name
-  source_folder        = "${path.module}/../../apps"
+  source                 = "../../modules/website-content"
+  storage_account_name   = module.storage_account.storage_account_name
+  storage_container_name = module.storage_account.static_web_container_name
+  source_folder          = "${path.module}/../../apps"
 }
 
 module "log_storage" {
