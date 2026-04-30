@@ -56,7 +56,7 @@ resource "azurerm_cdn_frontdoor_route" "default_route" {
 }
 
 resource "azurerm_cdn_frontdoor_firewall_policy" "waf_policy" {
-  name                              = "waf-${var.project_name}"
+  name                              = "waf${var.project_name}"
   resource_group_name               = var.resource_group_name
   sku_name                          = azurerm_cdn_frontdoor_profile.profile.sku_name
   enabled                           = true
