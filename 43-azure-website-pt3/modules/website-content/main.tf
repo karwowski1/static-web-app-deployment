@@ -8,7 +8,7 @@ resource "azurerm_storage_blob" "index_html" {
 }
 
 resource "azurerm_storage_blob" "404_html" {
-  name                   = "404.html"
+  name                   = "error_404"
   storage_account_name   = var.storage_account_name
   storage_container_name = "$web"
   type                   = "Block"
@@ -17,7 +17,7 @@ resource "azurerm_storage_blob" "404_html" {
 }
 
 resource "azurerm_storage_blob" "500_html" {
-  name                   = "500.html"
+  name                   = "error_500"
   storage_account_name   = var.storage_account_name
   storage_container_name = "$web"
   type                   = "Block"

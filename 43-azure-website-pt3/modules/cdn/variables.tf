@@ -19,6 +19,7 @@ variable "tags" {
 }
 
 variable "log_storage_account_id" {
-  type = string
-  description = "ID konta magazynu przeznaczonego na logi z Front Doora"
+  type        = string
+  description = "Storage account ID where CDN logs will be stored. Ensure this storage account is in the same region as the CDN profile for optimal performance."
 }
+

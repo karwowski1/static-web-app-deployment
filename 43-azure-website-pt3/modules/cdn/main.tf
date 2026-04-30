@@ -1,19 +1,19 @@
-resource "azurerm_cdn_frontdoor_profile" "main" {
+resource "azurerm_cdn_frontdoor_profile" "profile" {
   name                = "afd-prof-${var.project_name}"
   resource_group_name = var.resource_group_name
   sku_name            = "Standard_AzureFrontDoor"
   tags                = var.tags
 }
 
-resource "azurerm_cdn_frontdoor_endpoint" "main" {
+resource "azurerm_cdn_frontdoor_endpoint" "endpoint" {
   name                     = "afde-${var.project_name}"
-  cdn_frontdoor_profile_id = azurerm_cdn_frontdoor_profile.main.id
+  cdn_frontdoor_profile_id = azurerm_cdn_frontdoor_profile.profile.id
   tags                     = var.tags
 }
 
-resource "azurerm_cdn_frontdoor_origin_group" "main" {
+resource "azurerm_cdn_frontdoor_origin_group" "static_origin_group" {
   name                     = "default-origin-group"
-  cdn_frontdoor_profile_id = azurerm_cdn_frontdoor_profile.main.id
+  cdn_frontdoor_profile_id = azurerm_cdn_frontdoor_profile.profile.id
   session_affinity_enabled = false
 
   load_balancing {
@@ -30,9 +30,9 @@ resource "azurerm_cdn_frontdoor_origin_group" "main" {
   }
 }
 
-resource "azurerm_cdn_frontdoor_origin" "main" {
+resource "azurerm_cdn_frontdoor_origin" "static_origin" {
   name                           = "staticweborigin"
-  cdn_frontdoor_origin_group_id  = azurerm_cdn_frontdoor_origin_group.main.id
+  cdn_frontdoor_origin_group_id  = azurerm_cdn_frontdoor_origin_group.static_origin_group.id
   enabled                        = true
   host_name                      = var.storage_host_name
   http_port                      = 80
@@ -43,11 +43,11 @@ resource "azurerm_cdn_frontdoor_origin" "main" {
   certificate_name_check_enabled = true
 }
 
-resource "azurerm_cdn_frontdoor_route" "main" {
+resource "azurerm_cdn_frontdoor_route" "default_route" {
   name                          = "default-route"
-  cdn_frontdoor_endpoint_id     = azurerm_cdn_frontdoor_endpoint.main.id
-  cdn_frontdoor_origin_group_id = azurerm_cdn_frontdoor_origin_group.main.id
-  cdn_frontdoor_origin_ids      = [azurerm_cdn_frontdoor_origin.main.id]
+  cdn_frontdoor_endpoint_id     = azurerm_cdn_frontdoor_endpoint.endpoint.id
+  cdn_frontdoor_origin_group_id = azurerm_cdn_frontdoor_origin_group.static_origin_group.id
+  cdn_frontdoor_origin_ids      = [azurerm_cdn_frontdoor_origin.static_origin.id]
   supported_protocols           = ["Http", "Https"]
   patterns_to_match             = ["/*"]
   forwarding_protocol           = "HttpsOnly"
@@ -55,10 +55,10 @@ resource "azurerm_cdn_frontdoor_route" "main" {
   https_redirect_enabled        = true
 }
 
-resource "azurerm_cdn_frontdoor_firewall_policy" "main" {
+resource "azurerm_cdn_frontdoor_firewall_policy" "waf_policy" {
   name                              = "afdwaf-${var.project_name}-policy"
   resource_group_name               = var.resource_group_name
-  sku_name                          = azurerm_cdn_frontdoor_profile.main.sku_name
+  sku_name                          = azurerm_cdn_frontdoor_profile.profile.sku_name
   enabled                           = true
   mode                              = "Prevention"
   redirect_url                      = null
@@ -84,17 +84,17 @@ resource "azurerm_cdn_frontdoor_firewall_policy" "main" {
   tags = var.tags
 }
 
-resource "azurerm_cdn_frontdoor_security_policy" "main" {
+resource "azurerm_cdn_frontdoor_security_policy" "security_policy" {
   name                     = "afdsp-${var.project_name}"
-  cdn_frontdoor_profile_id = azurerm_cdn_frontdoor_profile.main.id
+  cdn_frontdoor_profile_id = azurerm_cdn_frontdoor_profile.profile.id
 
   security_policies {
     firewall {
-      cdn_frontdoor_firewall_policy_id = azurerm_cdn_frontdoor_firewall_policy.main.id
+      cdn_frontdoor_firewall_policy_id = azurerm_cdn_frontdoor_firewall_policy.waf_policy.id
 
       association {
         domain {
-          cdn_frontdoor_domain_id = azurerm_cdn_frontdoor_endpoint.main.id
+          cdn_frontdoor_domain_id = azurerm_cdn_frontdoor_endpoint.endpoint.id
         }
         patterns_to_match = ["/*"]
       }
@@ -102,9 +102,9 @@ resource "azurerm_cdn_frontdoor_security_policy" "main" {
   }
 }
 
-resource "azurerm_monitor_diagnostic_setting" "afd" {
+resource "azurerm_monitor_diagnostic_setting" "diagnostics" {
   name               = "diag-afd-${var.project_name}"
-  target_resource_id = azurerm_cdn_frontdoor_profile.main.id
+  target_resource_id = azurerm_cdn_frontdoor_profile.profile.id
   storage_account_id = var.log_storage_account_id
 
   enabled_log {
