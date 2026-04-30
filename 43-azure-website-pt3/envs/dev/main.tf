@@ -31,9 +31,11 @@ module "cdn" {
   source              = "../../modules/cdn"
   project_name        = var.project_name
   resource_group_name = module.resource_group.name
-  location            = "westeurope"
+  location            = "global"
   storage_host_name   = module.storage_account.primary_web_host
   tags                = var.common_tags
+
+  log_storage_account_id = module.log_storage.storage_account_id
 }
 
 module "monitoring" {
