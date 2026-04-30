@@ -22,11 +22,12 @@ pipeline {
             steps {
                 dir("${TF_DIR}") {
                     withCredentials([
-                        usernamePassword(credentialsId: 'azure-spn-apply', usernameVariable: 'ARM_CLIENT_ID', passwordVariable: 'ARM_CLIENT_SECRET')
+                        usernamePassword(credentialsId: 'azure-spn-plan', usernameVariable: 'ARM_CLIENT_ID', passwordVariable: 'ARM_CLIENT_SECRET')
                     ]) {
                         sh 'terraform init'
                         sh 'terraform fmt -check'
                         sh 'terraform validate'
+                        sh 'tflint'
                     }
                 }
             }
@@ -36,7 +37,7 @@ pipeline {
             steps {
                 dir("${TF_DIR}") {
                     withCredentials([
-                        usernamePassword(credentialsId: 'azure-spn-apply', usernameVariable: 'ARM_CLIENT_ID', passwordVariable: 'ARM_CLIENT_SECRET')
+                        usernamePassword(credentialsId: 'azure-spn-plan', usernameVariable: 'ARM_CLIENT_ID', passwordVariable: 'ARM_CLIENT_SECRET')
                     ]) {
                         sh 'terraform plan -out=tfplan'
                     }
