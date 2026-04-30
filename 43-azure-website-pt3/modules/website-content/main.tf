@@ -1,5 +1,5 @@
 resource "azurerm_storage_blob" "index_html" {
-  name                   = "index"
+  name                   = "index.html"
   storage_account_name   = var.storage_account_name
   storage_container_name = var.storage_container_name
   type                   = "Block"
