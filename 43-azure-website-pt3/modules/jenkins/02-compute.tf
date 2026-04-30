@@ -1,5 +1,5 @@
 resource "azurerm_linux_virtual_machine" "jenkins_vm" {
-  name                = "jenkins-vm"
+  name                = "vm-jenkins"
   resource_group_name = var.resource_group_name
   location            = var.location
   size                = var.vm_size
@@ -8,9 +8,13 @@ resource "azurerm_linux_virtual_machine" "jenkins_vm" {
     azurerm_network_interface.jenkins_nic.id,
   ]
 
+  identity {
+    type = "SystemAssigned"
+  }
+
   admin_ssh_key {
     username   = var.admin_username
-    public_key = file(var.ssh_public_key_path)
+    public_key = file(pathexpand(var.ssh_public_key_path))
   }
 
   os_disk {

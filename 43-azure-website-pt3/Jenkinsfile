@@ -1,16 +1,13 @@
 pipeline {
     agent any
 
-    // Ensure concurrent builds don't run at the same time and mess up the state
     options {
         disableConcurrentBuilds()
     }
 
     environment {
-        // Path to the Terraform environment
         TF_DIR = '43-azure-website-pt3/envs/dev'
         
-        // General Azure variables (assuming these are stored as secret text in Jenkins)
         ARM_TENANT_ID       = credentials('azure-tenant-id')
         ARM_SUBSCRIPTION_ID = credentials('azure-subscription-id')
     }
@@ -19,16 +16,13 @@ pipeline {
         stage('Init & Validate') {
             steps {
                 dir("${TF_DIR}") {
-                    // Initialize Terraform
                     sh 'terraform init'
                     
-                    // Format check
                     sh 'terraform fmt -check'
                     
-                    // Validation
+                    
                     sh 'terraform validate'
                     
-                    // TFLint (Assuming tflint is installed on the Jenkins agent)
                     sh 'tflint -f compact'
                 }
             }
@@ -37,18 +31,15 @@ pipeline {
         stage('Plan') {
             steps {
                 dir("${TF_DIR}") {
-                    // Use Read-Only Service Principal (Least Privilege)
                     withCredentials([
                         usernamePassword(credentialsId: 'azure-spn-plan', usernameVariable: 'ARM_CLIENT_ID', passwordVariable: 'ARM_CLIENT_SECRET')
                     ]) {
-                        // Generate plan and save it to a file (Plan as Artifact)
                         sh 'terraform plan -out=tfplan'
                     }
                 }
             }
             post {
                 success {
-                    // Store the generated plan as a pipeline artifact to prevent drift
                     archiveArtifacts artifacts: "${TF_DIR}/tfplan", fingerprint: true
                 }
             }
@@ -56,7 +47,6 @@ pipeline {
 
         stage('Approval for Apply') {
             steps {
-                // Manual trigger (Approval) before applying
                 input message: 'Do you want to apply the infrastructure changes?', ok: 'Deploy'
             }
         }
@@ -64,11 +54,9 @@ pipeline {
         stage('Apply') {
             steps {
                 dir("${TF_DIR}") {
-                    // Use Write-Access Service Principal (Full permissions)
                     withCredentials([
                         usernamePassword(credentialsId: 'azure-spn-apply', usernameVariable: 'ARM_CLIENT_ID', passwordVariable: 'ARM_CLIENT_SECRET')
                     ]) {
-                        // Apply the exact plan that was generated in the 'Plan' stage
                         sh 'terraform apply -auto-approve tfplan'
                     }
                 }

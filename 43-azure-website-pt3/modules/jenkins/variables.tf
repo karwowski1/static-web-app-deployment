@@ -6,10 +6,6 @@ variable "location" {
   type = string
 }
 
-variable "subnet_id" {
-  type = string
-}
-
 variable "vm_size" {
   type    = string
   default = "Standard_B2s"
