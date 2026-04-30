@@ -48,3 +48,8 @@ module "monitoring" {
   cdn_profile_id         = module.cdn.profile_id
   log_storage_account_id = module.log_storage.storage_account_id
 }
+
+import {
+  to = module.storage_account.azurerm_storage_container.web
+  id = "https://ststaticwebsiteazrm.blob.core.windows.net/$web"
+}
