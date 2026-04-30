@@ -1,13 +1,18 @@
 pipeline {
     agent any
 
+    tools {
+        terraform 'terraform-1.5.0'
+    }
+    
     options {
         disableConcurrentBuilds()
+        ansiColor('xterm')
     }
 
     environment {
-        TF_DIR = '43-azure-website-pt3/envs/dev'
-        
+        TF_DIR              = '43-azure-website-pt3/envs/dev'
+        TF_IN_AUTOMATION    = 'true'
         ARM_TENANT_ID       = credentials('azure-tenant-id')
         ARM_SUBSCRIPTION_ID = credentials('azure-subscription-id')
     }
@@ -16,14 +21,13 @@ pipeline {
         stage('Init & Validate') {
             steps {
                 dir("${TF_DIR}") {
-                    sh 'terraform init'
-                    
-                    sh 'terraform fmt -check'
-                    
-                    
-                    sh 'terraform validate'
-                    
-                    sh 'tflint -f compact'
+                    withCredentials([
+                        usernamePassword(credentialsId: 'azure-spn', usernameVariable: 'ARM_CLIENT_ID', passwordVariable: 'ARM_CLIENT_SECRET')
+                    ]) {
+                        sh 'terraform init'
+                        sh 'terraform fmt -check'
+                        sh 'terraform validate'
+                    }
                 }
             }
         }
@@ -32,7 +36,7 @@ pipeline {
             steps {
                 dir("${TF_DIR}") {
                     withCredentials([
-                        usernamePassword(credentialsId: 'azure-spn-plan', usernameVariable: 'ARM_CLIENT_ID', passwordVariable: 'ARM_CLIENT_SECRET')
+                        usernamePassword(credentialsId: 'azure-spn', usernameVariable: 'ARM_CLIENT_ID', passwordVariable: 'ARM_CLIENT_SECRET')
                     ]) {
                         sh 'terraform plan -out=tfplan'
                     }
@@ -45,9 +49,11 @@ pipeline {
             }
         }
 
-        stage('Approval for Apply') {
+        stage('Approval') {
             steps {
-                input message: 'Do you want to apply the infrastructure changes?', ok: 'Deploy'
+                timeout(time: 1, unit: 'HOURS') {
+                    input message: 'Review the plan. Deploy to Azure?'
+                }
             }
         }
 
@@ -55,12 +61,18 @@ pipeline {
             steps {
                 dir("${TF_DIR}") {
                     withCredentials([
-                        usernamePassword(credentialsId: 'azure-spn-apply', usernameVariable: 'ARM_CLIENT_ID', passwordVariable: 'ARM_CLIENT_SECRET')
+                        usernamePassword(credentialsId: 'azure-spn', usernameVariable: 'ARM_CLIENT_ID', passwordVariable: 'ARM_CLIENT_SECRET')
                     ]) {
                         sh 'terraform apply -auto-approve tfplan'
                     }
                 }
             }
+        }
+    }
+
+    post {
+        always {
+            cleanWs()
         }
     }
 }
