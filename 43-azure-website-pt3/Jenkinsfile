@@ -22,7 +22,7 @@ pipeline {
             steps {
                 dir("${TF_DIR}") {
                     withCredentials([
-                        usernamePassword(credentialsId: 'azure-spn', usernameVariable: 'ARM_CLIENT_ID', passwordVariable: 'ARM_CLIENT_SECRET')
+                        usernamePassword(credentialsId: 'azure-spn-apply', usernameVariable: 'ARM_CLIENT_ID', passwordVariable: 'ARM_CLIENT_SECRET')
                     ]) {
                         sh 'terraform init'
                         sh 'terraform fmt -check'
