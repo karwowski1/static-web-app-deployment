@@ -2,9 +2,9 @@ pipeline {
     agent any
 
     tools {
-        terraform 'terraform-1.5.0'
+        terraform 'terraform'
     }
-    
+
     options {
         disableConcurrentBuilds()
         ansiColor('xterm')
