@@ -7,6 +7,7 @@ variable "location" {
 variable "project_name" {
   description = "Main prefix for all resources (DRY)"
   type        = string
+  default     = "staticwebsiteazurept3"
 }
 
 variable "common_tags" {
