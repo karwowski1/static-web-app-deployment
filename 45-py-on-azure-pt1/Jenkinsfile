@@ -1,0 +1,86 @@
+pipeline {
+    agent any
+
+    options {
+        lock('terraform-state')
+        disableConcurrentBuilds()
+        ansiColor('xterm')
+    }
+
+    triggers {
+        pollSCM('')
+    }
+
+    environment {
+        ARM_USE_OIDC = "true"
+        TF_IN_AUTOMATION = "true"
+        ARM_TENANT_ID = "YOUR_TENANT_ID"
+        ARM_SUBSCRIPTION_ID = "YOUR_SUBSCRIPTION_ID"
+        ACR_NAME = "twajnazwaacr" 
+    }
+
+    stages {
+        stage('Build & Push Docker Image') {
+            steps {
+                // Używamy Service Principal (wersja Apply, ponieważ ma uprawnienia do zapisu/push) do logowania
+                withCredentials([azureServicePrincipal('azure-sp-apply')]) {
+                    script {
+                        dir('app') {
+                            sh '''
+                            echo "Logging into Azure..."
+                            az login --service-principal -u $AZURE_CLIENT_ID -p $AZURE_CLIENT_SECRET --tenant $AZURE_TENANT_ID
+                            az acr login --name $ACR_NAME
+                            
+                            echo "Building Docker image..."
+                            docker build -t $ACR_NAME.azurecr.io/py-app:v1 .
+                            
+                            echo "Pushing image to ACR..."
+                            docker push $ACR_NAME.azurecr.io/py-app:v1
+                            '''
+                        }
+                    }
+                }
+            }
+        }
+
+        stage('Terraform Init & Validate') {
+            steps {
+                dir('envs/dev') {
+                    sh '''
+                    terraform init
+                    terraform fmt -check
+                    terraform validate
+                    tflint
+                    '''
+                }
+            }
+        }
+
+        stage('Terraform Plan') {
+            steps {
+                withCredentials([azureServicePrincipal('azure-sp-plan-only')]) {
+                    dir('envs/dev') {
+                        sh 'terraform plan -out=tfplan'
+                    }
+                }
+            }
+            post {
+                success {
+                    archiveArtifacts artifacts: 'envs/dev/tfplan', fingerprint: true
+                }
+            }
+        }
+
+        stage('Terraform Apply') {
+            steps {
+                input message: 'Approve Terraform Apply?', ok: 'Apply'
+
+                withCredentials([azureServicePrincipal('azure-sp-apply')]) {
+                    dir('envs/dev') {
+                        sh 'terraform apply "tfplan"'
+                    }
+                }
+            }
+        }
+    }
+}
