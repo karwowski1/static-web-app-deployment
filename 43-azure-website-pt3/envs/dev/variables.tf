@@ -7,6 +7,7 @@ variable "location" {
 variable "project_name" {
   description = "Main prefix for all resources (DRY)"
   type        = string
+  default     = "staticwebsiteazrm"
 }
 
 variable "common_tags" {

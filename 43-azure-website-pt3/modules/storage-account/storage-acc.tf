@@ -13,3 +13,11 @@ resource "azurerm_storage_account_static_website" "static_web" {
   index_document     = "index.html"
   error_404_document = "404.html"
 }
+
+resource "azurerm_storage_container" "web" {
+  name                  = "$web"
+  storage_account_name  = azurerm_storage_account.static_web.name
+  container_access_type = "private"
+
+  depends_on = [azurerm_storage_account_static_website.static_web]
+}
